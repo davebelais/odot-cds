@@ -206,15 +206,15 @@ def read_cds501_csvs_table(
             # Assemble a `datetime` from parts for rows in the "crash" table
             if table == 'crash':
                 row['crash_dt'] = iso8601.parse_date(
-                    '%s-%s-%sT%s:00' % (
+                    '%s-%s-%sT%s' % (
                         row['crash_yr_no'],
                         ('00' + row['crash_mo_no'])[-2:],
                         ('00' + row['crash_day_no'])[-2:],
                         (
-                            '00' + row['crash_hr_no']
+                            '00%s:00' % row['crash_hr_no']
                             if row['crash_hr_no'] <= '24' else
-                            '00'
-                        )[-2:]
+                            '23:59'
+                        )[-5:]
                     )
                 ).astimezone()
             yield row
