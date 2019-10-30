@@ -6,8 +6,11 @@ import ftplib
 import functools
 import os
 import socket
+import sys
+from traceback import format_exception
 from typing import Optional, Tuple, Iterable, List
 from urllib.parse import urlparse
+from warnings import warn
 
 SOURCES_DIRECTORY = os.path.dirname(__file__) + '/sources'
 ODOT_FTP_HOST = 'ftp.odot.state.or.us'
@@ -16,7 +19,7 @@ TRANSPORTATION_SAFETY_GIS_DIRECTORY = '/tdb/trandata/GIS_data/Safety'
 
 def _get_proxy_url(url: Optional[str] = None) -> Optional[str]:
     """
-    Check for an "HTTP_PROXY" environment variable
+    Return a proxy URL. Check for a proxy environment variable
     """
     if not url:
         for key in (
@@ -140,7 +143,7 @@ def get_socket(
 class FTP(ftplib.FTP):
     """
     This class adds support for proxies to `ftplib.FTP`, and adds a "walk"
-    method.
+    and "download" method.
     """
 
     port: int = 21
@@ -238,20 +241,33 @@ def download_safety_data(
     already exist in the target directory*.
     """
     # Connect to the FTP
-    ftp = FTP(
-        host=host,
-        proxy=proxy,
-        timeout=999999
-    )
+    ftp: Optional[FTP] = None
+    while ftp is None:
+        try:
+            ftp = FTP(
+                host=host,
+                proxy=proxy
+            )
+        except (TimeoutError, EOFError):
+            warn(''.join(format_exception(*sys.exc_info())))
     ftp.login()
-    for root, directories, files in ftp.walk(source_directory):
+    walker: Optional[Iterable[Tuple]] = None
+    while walker is None:
+        try:
+            walker = ftp.walk(source_directory)
+        except TimeoutError:
+            warn(''.join(format_exception(*sys.exc_info())))
+    for root, directories, files in walker:
         for source_file_path in files:
             target_file_path = target_directory + source_file_path
-            if not os.path.exists(target_file_path):
-                ftp.download(
-                    source_file_path,
-                    target_file_path
-                )
+            while not os.path.exists(target_file_path):
+                try:
+                    ftp.download(
+                        source_file_path,
+                        target_file_path
+                    )
+                except TimeoutError:
+                    warn(''.join(format_exception(*sys.exc_info())))
 
 
 if __name__ == '__main__':
