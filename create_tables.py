@@ -6,7 +6,9 @@ import os
 import csv
 import sqlite3
 from collections import OrderedDict, namedtuple
+from datetime import datetime
 from decimal import Decimal
+from time import timezone
 
 import iso8601 as iso8601
 import pandas
@@ -214,7 +216,7 @@ def read_cds501_csvs_table(
                             '00'
                         )[-2:]
                     )
-                ).localize()
+                ).astimezone()
             yield row
 
 
