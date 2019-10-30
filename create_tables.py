@@ -201,15 +201,20 @@ def read_cds501_csvs_table(
         file_name
     ):
         for row in read_cds501_csv_table(table, csv_path):
-            # Assemble a `date` from parts for rows in the "crash" table
+            # Assemble a `datetime` from parts for rows in the "crash" table
             if table == 'crash':
                 row['crash_dt'] = iso8601.parse_date(
-                    '%s-%s-%s' % (
+                    '%s-%s-%sT%s:00' % (
                         row['crash_yr_no'],
                         ('00' + row['crash_mo_no'])[-2:],
-                        ('00' + row['crash_day_no'])[-2:]
+                        ('00' + row['crash_day_no'])[-2:],
+                        (
+                            '00' + row['crash_hr_no']
+                            if row['crash_hr_no'] <= '24' else
+                            '00'
+                        )[-2:]
                     )
-                )
+                ).localize()
             yield row
 
 
