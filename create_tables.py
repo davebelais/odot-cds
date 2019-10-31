@@ -6,7 +6,7 @@ import os
 import csv
 import sqlite3
 from collections import OrderedDict, namedtuple
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from time import timezone
 
@@ -205,18 +205,25 @@ def read_cds501_csvs_table(
         for row in read_cds501_csv_table(table, csv_path):
             # Assemble a `datetime` from parts for rows in the "crash" table
             if table == 'crash':
-                row['crash_dt'] = iso8601.parse_date(
-                    '%s-%s-%sT%s' % (
+                crash_datetime = iso8601.parse_date(
+                    # '%s-%s-%sT%s' % (
+                    '%s-%s-%s' % (
                         row['crash_yr_no'],
                         ('00' + row['crash_mo_no'])[-2:],
                         ('00' + row['crash_day_no'])[-2:],
-                        (
-                            '00%s:00' % row['crash_hr_no']
-                            if row['crash_hr_no'] <= '24' else
-                            '23:59'
-                        )[-5:]
-                    )
-                ).astimezone()
+                        # (
+                        #     '00%s:00' % row['crash_hr_no']
+                        #     if row['crash_hr_no'] <= '24' else
+                        #     '23:59'
+                        # )[-5:]
+                    ),
+                    default_timezone=None
+                )
+                row['crash_dt'] = date(
+                    crash_datetime.year,
+                    crash_datetime.month,
+                    crash_datetime.day
+                )
             yield row
 
 
