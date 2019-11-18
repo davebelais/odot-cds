@@ -6,6 +6,7 @@ import os
 import csv
 import sqlite3
 from collections import OrderedDict, namedtuple
+import airflow
 from datetime import datetime, date
 from decimal import Decimal
 from time import timezone
@@ -18,7 +19,7 @@ from typing import Iterable, Optional, Union, Tuple, List
 
 # Constants
 REPOSITORY_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
-PARQUET_TABLES_DIRECTORY = REPOSITORY_DIRECTORY + '/tables'
+PARQUET_TABLES_DIRECTORY = REPOSITORY_DIRECTORY + '/odot-cds/tables'
 SOURCES_DIRECTORY = REPOSITORY_DIRECTORY + '/sources'
 CDS510_SQLLITE_PATH = SOURCES_DIRECTORY + '/cds510.db'
 CDS501_CSV_DIRECTORY = SOURCES_DIRECTORY + '/cds501'
