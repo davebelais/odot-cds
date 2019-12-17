@@ -5,6 +5,14 @@ from http.client import HTTPResponse
 from odot_cds import client
 
 
+_ECHO: bool = False
+
+
+class InvalidFileTypeError(Exception):
+
+    pass
+
+
 def _verify_magic_bytes(
     response: HTTPResponse,
     extension: str
@@ -12,10 +20,22 @@ def _verify_magic_bytes(
     """
     Verify that the response has the correct Magic Bytes for the file type
     """
-    if extension == 'pdf':
-        assert response.read(4) == b'%PDF-'
-    elif extension in ('xls', 'mdb'):
-        assert response.read(8) == b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1'
+    magic_bytes: bytes = b''
+    if extension == 'xls':
+        magic_bytes: bytes = b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1'
+    elif extension == 'mdb':
+        magic_bytes: bytes = b'\x00\x01\x00\x00Standard Jet DB\x00\x01\x00\x00'
+    else:
+        return
+    data: bytes = response.read(len(magic_bytes))
+    if data != magic_bytes:
+        data += response.read()
+        raise InvalidFileTypeError(
+            '%s\n\n%s' % (
+                response.info(),
+                repr(data)
+            )
+        )
 
 
 def _extract_and_validate(
@@ -25,11 +45,20 @@ def _extract_and_validate(
     Perform an extract with the given parameters and validate that the correct
     type of response was received
     """
-    connection: client.Client = client.connect(echo=False)
+    # It is important not to use the *cached* client (acquired with a `connect`
+    # function instead of direct instantiation) below, as executing the
+    # `extract` method would reset all form field options, and the view state
+    # created by those options may still be needed for calling procedures
+    # to generate test scenarios
+    connection: client.Client = client.Client(echo=_ECHO)
     response: HTTPResponse = connection.extract(**parameters)
+    # Print the function call being performed
     print(
-        'odot_cds.client.Client().extract(**%s)' %
-        repr(parameters)
+        'Client().extract(%s)' %
+        ', '.join(
+            '%s=%s' % (key, repr(value))
+            for key, value in parameters.items()
+        )
     )
     if parameters['extract'] == client.Extract.CDS501:
         # CDS501 is text (a CSV), so verify the content can be interpreted as
@@ -41,33 +70,13 @@ def _extract_and_validate(
     elif parameters['extract'] == client.Extract.CDS510:
         _verify_magic_bytes(response, 'mdb')
     else:
-        if parameters['report_format'] in (
-            'Print Format', 'rdoHwyReportFormatPDF'
-        ):
-            _verify_magic_bytes(response, 'pdf')
-        else:
-            _verify_magic_bytes(response, 'xls')
-
-
-
-def _extract_report_formats(
-    **parameters
-) -> None:
-    if parameters['export'] in (
-        client.Export.CDS501,
-        client.Export.CDS510
-    ):
-        _extract_and_validate(**parameters)
-    else:
-        for report_format in ('Excel Format', 'Print Format'):
-            parameters.update(report_format=report_format)
-            _extract_and_validate(**parameters)
+        _verify_magic_bytes(response, 'xls')
 
 
 def _extract_all_roads_county(
     **parameters
 ) -> None:
-    connection: client.Client = client.Client(echo=False)
+    connection: client.Client = client.Client(echo=_ECHO)
     # Choose a county at random
     parameters.update(
         county=random.choice(
@@ -80,7 +89,7 @@ def _extract_all_roads_county(
 def _extract_all_roads_city(
     **parameters
 ) -> None:
-    connection: client.Client = client.connect(echo=False)
+    connection: client.Client = client.connect(echo=_ECHO)
     # Choose a city at random
     parameters.update(
         city=random.choice(
@@ -100,13 +109,13 @@ def _extract_all_roads_query_types(
         "State Highways"
     ):
         parameters.update(query_type=query_type)
-        _extract_report_formats(**parameters)
+        _extract_and_validate(**parameters)
 
 
 def _extract_local_roads_streets(
     **parameters
 ) -> None:
-    connection: client.Client = client.connect(echo=False)
+    connection: client.Client = client.connect(echo=_ECHO)
     # If a query type is specified, set it so that the correct street options
     # are populated
     if 'query_type' in parameters:
@@ -146,7 +155,7 @@ def _extract_local_roads_streets(
                 )
             )
         )
-    _extract_report_formats(**parameters)
+    _extract_and_validate(**parameters)
 
 
 def _extract_local_roads_query_types(
@@ -170,7 +179,7 @@ def _extract_local_roads_query_types(
 def _extract_local_roads_county(
     **parameters
 ) -> None:
-    connection: client.Client = client.Client(echo=False)
+    connection: client.Client = client.Client(echo=_ECHO)
     # Choose a county at random
     parameters.update(
         county=random.choice(
@@ -199,8 +208,8 @@ def _extract_highways_mileage(
         (True, False),
         (False, True)
     ):
-        parameters.update['non_add_mileage'] = non_add_mileage
-        parameters.update['add_mileage'] = add_mileage
+        parameters['non_add_mileage'] = non_add_mileage
+        parameters['add_mileage'] = add_mileage
         _extract_highways_z_mile_points(**parameters)
 
 
@@ -211,14 +220,14 @@ def _extract_highways_z_mile_points(
         True,
         False
     ):
-        parameters.update['z_mile_points'] = z_mile_points
-        _extract_report_formats(**parameters)
+        parameters['z_mile_points'] = z_mile_points
+        _extract_and_validate(**parameters)
 
 
 def _extract_highways(
     **parameters
 ) -> None:
-    connection: client.Client = client.connect(echo=False)
+    connection: client.Client = client.connect(echo=_ECHO)
     # Choose a highways segment and type at random
     parameters['highway'] = random.choice(
         tuple(
@@ -236,7 +245,7 @@ def _extract_highways(
 def _extract_local_roads(
     **parameters
 ) -> None:
-    connection: client.Client = client.connect(echo=False)
+    connection: client.Client = client.connect(echo=_ECHO)
     # Set the county, so that the city/section options get updated
     connection.update_form_field(
         'local_roads_county',
@@ -255,7 +264,7 @@ def _extract_local_roads(
 
 def test_extract():
     """
-    Retrieve and validate an export for the last week of last year, for
+    Retrieve and validate an extract/report for the last week of last year, for
     multiple parameter sets representing the breadth of possible report/extract
     configurations
     """
@@ -269,12 +278,15 @@ def test_extract():
         parameters.update(road_type=road_type)
         for extract in client.Extract:
             parameters.update(extract=extract)
-            if road_type == client.RoadType.ALL:
-                _extract_all_roads(**parameters)
-            elif road_type == client.RoadType.HIGHWAY:
-                _extract_highways(**parameters)
-            else:
-                _extract_local_roads(**parameters)
+            try:
+                if road_type == client.RoadType.ALL:
+                    _extract_all_roads(**parameters)
+                elif road_type == client.RoadType.HIGHWAY:
+                    _extract_highways(**parameters)
+                else:
+                    _extract_local_roads(**parameters)
+            except client.InvalidRoadTypeExtractError:
+                pass
 
 
 if __name__ == '__main__':

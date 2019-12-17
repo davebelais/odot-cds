@@ -200,6 +200,11 @@ class EmptyResponseError(Exception):
     pass
 
 
+class InvalidRoadTypeExtractError(Exception):
+
+    pass
+
+
 class _ZigZag:
     """
     This class represents a connection to https://zigzag.odot.state.or.us/
@@ -773,6 +778,19 @@ class FormFields:
         type='radio',
         name='ctl00$MainBodyContent$MainTabs$TabHighways$HwyFormatGroup'
     )
+    highways_record_number: FormField = FormField(
+        tag='input',
+        type='text',
+        name='ctl00$MainBodyContent$MainTabs$TabHighways$txtHwyRecordNumber'
+    )
+    highways_display_instructions: FormField = FormField(
+        tag='input',
+        type='checkbox',
+        name=(
+            'ctl00$MainBodyContent$MainTabs$TabHighways$'
+            'chkHwyDisplayInstructions'
+        )
+    )
     # Highway Commands
     highways_command_cds150: FormField = FormField(
         tag='input',
@@ -856,6 +874,19 @@ class FormFields:
         tag='input',
         type='radio',
         name='ctl00$MainBodyContent$MainTabs$TabLocalRoads$LclFormatGroup'
+    )
+    local_roads_record_number: FormField = FormField(
+        tag='input',
+        type='text',
+        name='ctl00$MainBodyContent$MainTabs$TabLocalRoads$txtLclRecordNumber'
+    )
+    local_roads_display_instructions: FormField = FormField(
+        tag='input',
+        type='checkbox',
+        name=(
+            'ctl00$MainBodyContent$MainTabs$TabLocalRoads$'
+            'chkLclDisplayInstructions'
+        )
     )
     # Local-Roads Commands
     local_roads_command_cds150: FormField = FormField(
@@ -985,13 +1016,16 @@ class FormFields:
                 data[form_field.name] = form_field.value
         return data
 
-    def reset(self) -> None:
+    def reset(self, commands_only: bool = False) -> None:
         """
         Reset all form field values
         """
         for field_ in fields(self):
             form_field: FormField = getattr(self, field_.name)
-            if form_field.name[0] != '_':
+            if form_field.name[0] != '_' and (
+                (not commands_only) or
+                'command' in form_field.name
+            ):
                 form_field.reset()
 
 
@@ -1316,8 +1350,7 @@ class Client:
         city: str = '',
         query_type: str = 'All Roads',
         begin_date: date = DEFAULT_BEGIN_DATE,
-        end_date: date = DEFAULT_END_DATE,
-        report_format: str = 'Excel Format'
+        end_date: date = DEFAULT_END_DATE
     ) -> None:
         """
         Set fields relevant to the "All Roads" tab
@@ -1329,7 +1362,7 @@ class Client:
         self.update_form_field('all_roads_query_type', query_type)
         self.update_form_field('all_roads_begin_date', begin_date)
         self.update_form_field('all_roads_end_date', end_date)
-        self.update_form_field('all_roads_format', report_format)
+        self.update_form_field('all_roads_format', 'Excel Format')
         # "Click" on the extract
         if extract == Extract.CDS150:
             self.form_fields.all_roads_command_cds150.click()
@@ -1345,6 +1378,10 @@ class Client:
             self.form_fields.all_roads_command_cds501.click()
         elif extract == Extract.CDS510:
             self.form_fields.all_roads_command_cds510.click()
+        else:
+            raise InvalidRoadTypeExtractError(
+                '%s is not a valid extract for "All Roads"' % repr(extract)
+            )
 
     def _set_local_roads_fields(
         self,
@@ -1358,7 +1395,8 @@ class Client:
         end_mile_point: float = 0.0,
         begin_date: date = DEFAULT_BEGIN_DATE,
         end_date: date = DEFAULT_END_DATE,
-        report_format: str = 'Excel Format'
+        record_number: int = 0,
+        display_instructions: bool = False
     ) -> None:
         # Set form fields from parameters
         self.update_form_field('local_roads_county', county)
@@ -1376,7 +1414,15 @@ class Client:
         )
         self.update_form_field('local_roads_begin_date', begin_date)
         self.update_form_field('local_roads_end_date', end_date)
-        self.update_form_field('local_roads_format', report_format)
+        self.update_form_field('local_roads_format', 'Excel Format')
+        self.update_form_field(
+            'local_roads_record_number',
+            str(record_number or '')
+        )
+        self.update_form_field(
+            'local_roads_display_instructions',
+            'on' if display_instructions else ''
+        )
         # "Click" on the extract
         if extract == Extract.CDS150:
             self.form_fields.local_roads_command_cds150.click()
@@ -1392,6 +1438,10 @@ class Client:
             self.form_fields.local_roads_command_cds501.click()
         elif extract == Extract.CDS510:
             self.form_fields.local_roads_command_cds510.click()
+        else:
+            raise InvalidRoadTypeExtractError(
+                '%s is not a valid extract for "Local Roads"' % repr(extract)
+            )
 
     def _set_highway_type(
         self,
@@ -1428,14 +1478,15 @@ class Client:
         extract: Extract = Extract.CDS501,
         begin_date: date = DEFAULT_BEGIN_DATE,
         end_date: date = DEFAULT_END_DATE,
-        report_format: str = 'Excel Format',
         highway: str = '',
         begin_mile_point: float = 0.0,
         end_mile_point: float = 0.0,
         highway_type: HighwayType = HighwayType.ALL,
         z_mile_points: bool = True,
         add_mileage: bool = True,
-        non_add_mileage: bool = True
+        non_add_mileage: bool = True,
+        record_number: int = 0,
+        display_instructions: bool = False
     ) -> None:
         # Set form fields from parameters
         self.update_form_field(
@@ -1481,7 +1532,15 @@ class Client:
         )
         self.update_form_field('highways_begin_date', begin_date)
         self.update_form_field('highways_end_date', end_date)
-        self.update_form_field('highways_format', report_format)
+        self.update_form_field('highways_format', 'Excel Format')
+        self.update_form_field(
+            'highways_record_number',
+            str(record_number or '')
+        )
+        self.update_form_field(
+            'highways_display_instructions',
+            'on' if display_instructions else ''
+        )
         # "Click" on the extract
         if extract == Extract.CDS150:
             self.form_fields.highways_command_cds150.click()
@@ -1497,6 +1556,10 @@ class Client:
             self.form_fields.highways_command_cds501.click()
         elif extract == Extract.CDS510:
             self.form_fields.highways_command_cds510.click()
+        else:
+            raise InvalidRoadTypeExtractError(
+                '%s is not a valid extract for "Highways"' % repr(extract)
+            )
 
     def extract(
         self,
@@ -1510,14 +1573,15 @@ class Client:
         query_type: str = '',
         begin_date: date = DEFAULT_BEGIN_DATE,
         end_date: date = DEFAULT_END_DATE,
-        report_format: str = 'Excel Format',
         highway: str = '',
         begin_mile_point: float = 0.0,
         end_mile_point: float = 0.0,
         highway_type: HighwayType = HighwayType.ALL,
         z_mile_points: bool = True,
         add_mileage: bool = True,
-        non_add_mileage: bool = True
+        non_add_mileage: bool = True,
+        record_number: int = 0,
+        display_instructions: bool = False
     ) -> HTTPResponse:
         """
         This method returns an an ODOT-CDS extract or report as an instance
@@ -1621,14 +1685,6 @@ class Client:
           - "Mile-Pointed County Road" (This is the only option if `city` is
             "000" or "Outside City Limits")
 
-        - report_format (str):
-
-          This parameter does not apply if `extract == Extract.CDS501` or
-          `extract == Extract.CDS510`.
-
-          - "Excel Format" (default)
-          - "Print Format"
-
         - highway (str):
 
           The number + name of a highway. For a dictionary of valid values,
@@ -1645,6 +1701,18 @@ class Client:
 
           Include traffic traveling in a direction wherein progress corresponds
           to a numeric decrease for mileage markers.
+
+        - record_number (int):
+
+          The report will start at this record #, and will include the first
+          5000 records following this record. This parameter is only applicable
+          if `road_type == RoadType.LOCAL` or `road_type == RoadType.HIGHWAY`.
+
+        - display_instructions (bool):
+
+          Causes instructions to be included in the report. This parameter is
+          only applicable if `road_type == RoadType.LOCAL` or
+          `road_type == RoadType.HIGHWAY`.
 
         Additional information about terms used above can be found
         in ODOT's [CDS code manual](
@@ -1669,8 +1737,7 @@ class Client:
                 city=city,
                 query_type=query_type,
                 begin_date=begin_date,
-                end_date=end_date,
-                report_format=report_format
+                end_date=end_date
             )
         elif road_type == RoadType.LOCAL:
             self._set_local_roads_fields(
@@ -1684,21 +1751,23 @@ class Client:
                 end_mile_point=end_mile_point,
                 begin_date=begin_date,
                 end_date=end_date,
-                report_format=report_format
+                record_number=record_number,
+                display_instructions=display_instructions
             )
         elif road_type == RoadType.HIGHWAY:
             self._set_highways_fields(
                 extract=extract,
                 begin_date=begin_date,
                 end_date=end_date,
-                report_format=report_format,
                 highway=highway,
                 begin_mile_point=begin_mile_point,
                 end_mile_point=end_mile_point,
                 highway_type=highway_type,
                 z_mile_points=z_mile_points,
                 add_mileage=add_mileage,
-                non_add_mileage=non_add_mileage
+                non_add_mileage=non_add_mileage,
+                record_number=record_number,
+                display_instructions=display_instructions
             )
         # Submit the form
         response = self.submit()
