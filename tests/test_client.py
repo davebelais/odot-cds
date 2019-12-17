@@ -45,11 +45,11 @@ def _extract_and_validate(
     Perform an extract with the given parameters and validate that the correct
     type of response was received
     """
-    # It is important not to use the *cached* client (acquired with a `connect`
-    # function instead of direct instantiation) below, as executing the
-    # `extract` method would reset all form field options, and the view state
-    # created by those options may still be needed for calling procedures
-    # to generate test scenarios
+    # It is important not to use the *cached* client (acquired with the
+    # `connect` function instead of direct instantiation) below, as executing
+    # the `extract` method would reset all form field options in the cached
+    # client, and the view state created by those options may still be needed
+    # for calling procedures to generate test scenarios
     connection: client.Client = client.Client(echo=_ECHO)
     response: HTTPResponse = connection.extract(**parameters)
     # Print the function call being performed
