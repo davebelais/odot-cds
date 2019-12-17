@@ -1,0 +1,153 @@
+Name,Label,Format,Description,Tables
+crash_id,Crash ID,"int, not null",The unique identifier for a given crash. This field is part of the primary key.,"crash, vhcl, partic"
+rec_typ_cd,Record Type,"char(1), not null","Indicates the data table: 1 = CRASH,  2 = VHCL (i.e, ""vehicle""), 3 = PARTIC (i.e., ""participant"")",
+vhcl_id,Vehicle ID,"int, not null",The unique identifier for a given vehicle. This field is part of the primary key.,"vhcl, partic"
+partic_id,Participant ID,"int, not null",The unique identifier for a given participant. This field is part of the primary key.,partic
+partic_dsply_seq_no,Participant Display Seq. #,"tinyint, not null","Sequence of participants in a given crash, overall.",partic
+vhcl_coded_seq_no,Vehicle Coded Seq. #,"tinyint, not null","Sequential number assigned to each vehicle in the crash.  Always blank on CRASH table.  Occurs on the VHCL table, and is represented as the ""Vehicle Sequence Number"" on the PARTIC table.","vhcl, partic"
+partic_vhcl_seq_no,Participant Vehicle Seq. #,"tinyint, not null","Only occurs on PARTIC Table.  Indicates sequence of participants within a given vehicle. For non-occupants, indicates overall sequence of non-occupants struck.",partic
+ser_no,Crash Serial #,"char(5), not null",DMV Serial Number assigned to the crash.  Unique within a given county and year.,crash
+crash_mo_no,Crash Month,"char(2), not null","May be concatenated with other date fields after import, and converted to ""Date"" format.",crash
+crash_day_no,Crash Day,"char(2), not null",  ,crash
+crash_yr_no,Crash Year,"char(4), not null",  ,crash
+crash_wk_day_cd,Week Day Code,"char(1), null",Ordinal ranking of crash day within a typical 7-day cycle.,crash
+crash_hr_no,Crash Hour,"char(2), not null",,crash
+cnty_id,County Code,"char(2), not null",2-character code assigned sequenctially to alphabetic list of Oregon Counties,crash
+city_sect_id,City Section ID,"integer, null","Identifier for Oregon Cities, and Portland Sections; see Code Manual for list",crash
+urb_area_cd,Urban Area Code,"tinyint, null",Federal Aid Urban Transportation Boundary,crash
+fc_cd,Functional Class Code,"char(2), not null",,crash
+nhs_flg,NHS Flag,"bit, not null",May be imported as Yes/No field,crash
+hwy_no,Highway Number,"char(3), null",Internal ODOT index number.  Refer to Code Manual for cross-reference with posted route shields.,crash
+hwy_sfx_no,Highway Suffix,"char(2), null",Not in use yet; will correspond to TransInfo connection identifier,crash
+rdwy_no,Roadway Number,"char(1), null",Coded for highways only.,crash
+hwy_compnt_cd,Highway Component,"char(1), null",Coded for highways only.,crash
+mlge_typ_cd,Mileage Type,"char(1), null",,crash
+rd_con_no,Connection Number,"char(1), null",,crash
+lrs_val,Linear Reference System (LRS),"varchar(20), null",Currently available for highways only.  Defines highway segment,crash
+lat_deg_no,Latitude Degrees,"integer, null",,crash
+lat_minute_no,Latitude Minutes,"integer, null",,crash
+lat_sec_no,Latitude Seconds,"decimal(9,7), null",,crash
+longtd_deg_no,Longitude Degrees,"integer, null",,crash
+longtd_minute_no,Longitude Minutes,"integer, null",,crash
+longtd_sec_no,Longitude Seconds,"decimal(9,7), null",,crash
+specl_jrsdct_id,Special RoadType,"char(2), null",For recreational road coding,crash
+jrsdct_grp_cd,RoadType Group,"char(2), not null",For recreational road coding,crash
+agy_st_no,Street Number,"char(7), null",Field length is 5 for City Streets; up to 7 for County Roads.  Not coded for rural highways.,crash
+isect_agy_st_no,Nearest Intersecting Street Number,"char(7), null",Field length is 5 for City Streets; up to 7 for County Roads.  Not coded for rural highways.,crash
+isect_seq_no,Intersection Sequence Number,"small int, null","Coded for intersectional crashes only. Default is ‘1’; otherwise, sequential for pairs of streets that intersect multiple times.",crash
+from_isect_dstnc_qty,Distance From Intersection,"integer, null","Code represents “feet” for city streets; “milepoint hundredths” for non-milepointed county roads (Multnomah, Washington).  Not coded for crashes on milepointed county roads & highways.",crash
+cmpss_dir_cd,Direction From Intersection,"char(1), not null",Compass direction; not coded for crashes on milepointed county roads & highways.,crash
+mp_no,Milepoint,"decimal(5,2), null",5 digits include 2 decimal places;  negative symbol and decimal point included,crash
+post_speed_lmt_val,Posted Speed Limit,"char(2), null",,crash
+rd_char_cd,Road Character,"char(1), not null",,crash
+off_rdwy_flg,Off-Roadway Flag,"bit, not null",May be imported as Yes/No field,crash
+isect_typ_cd,Intersection Type,"char(1), null",,crash
+isect_rel_flg,Intersection-Related Flag,"bit, not null","Crash occurred outside of, but related to activity at, intersection. May be imported as Yes/No field",crash
+rndabt_flg,Roundabout Flag,"bit, not null",Indicates this location occurs at a roundabout. May be imported as Yes/No field,crash
+drvwy_rel_flg,Driveway Related Flag,"bit, not null",May be imported as Yes/No field,crash
+ln_qty,Number of Lanes,"tinyint, null",,crash
+turng_leg_qty,Number of Turning Legs,"integer, null",,crash
+medn_typ_cd,Median Type,"char(1), null",,crash
+impct_loc_cd,Impact Location,"char(2), not null",Code method differs depending on road jurisdiction.  Refer to Code Manual.,crash
+crash_typ_cd,Crash Type,"char(1), not null",,crash
+collis_typ_cd,Collision Type,"char(1), not null",,crash
+crash_svrty_cd,Crash Severity,"char(1), not null","2 = fatal, 4 = injury, 5 = PDO",crash
+wthr_cond_cd,Weather Condition,"char(1), not null",,crash
+rd_surf_cond_cd,Road Surface Condition,"char(1), not null",,crash
+lgt_cond_cd,Light Condition,"char(1), not null",,crash
+traf_cntl_device_cd,Traffic Control Device (TCD),"char(3), not null",,crash
+traf_cntl_func_flg,TCD Functional Flag,"bit, not null",Default = ‘1’ (Yes). May be imported as Yes/No field,crash
+invstg_agy_cd,Investigating Agency,"char(1), null",,crash
+crash_evnt_1_cd,Crash Level Event 1 Code,"char(3), null","Up to 3 “events” can be coded for each crash, vehicle & participant.",crash
+crash_evnt_2_cd,Crash Level Event 2 Code,"char(3), null",  ,crash
+crash_evnt_3_cd,Crash Level Event 3 Code,"char(3), null",  ,crash
+crash_cause_1_cd,Crash Level Cause 1 Code,"char(2), null","Up to 3 “causes” can be coded for each crash, vehicle & participant.",crash
+crash_cause_2_cd,Crash Level Cause 2 Code,"char(2), null",  ,crash
+crash_cause_3_cd,Crash Level Cause 3 Code,"char(2), null",  ,crash
+schl_zone_ind,School Zone Indicator,"char(1), null",,crash
+wrk_zone_ind,Work Zone Indicator,"char(1), null",,crash
+alchl_invlv_flg,Alcohol-Involved Flag,"bit, not null",Indicates whether or not an active participant had been drinking. May be imported as Yes/No field,crash
+drug_invlv_flg,Drugs Involved Flag,"bit, not null",Indicates whether or not an active participant had been using drugs. May be imported as Yes/No field,crash
+crash_speed_invlv_flg,Crash Level Speed Involved Flag,"bit, not null",Indicates at least one vehicle in this crash was driving too fast for conditions or exceeding the posted speed. May be imported as Yes/No field,crash
+crash_hit_run_flg,Crash Level Hit & Run Flag,"bit, not null",Indicates at least one vehicle or active participant in this crash fled the scene. May be imported as Yes/No field,crash
+pop_rng_cd,Population Range Code,"char(1), null",,crash
+rd_cntl_cd,Road Control,"char(1), null",,crash
+rte_typ_cd,Route Type,"char(2), null","Indicates type of route (Interstate, US, Oregon)",crash
+rte_id,Route Number,"char(1), null",Indicates route number,crash
+reg_id,Region ID,"char(1), null",ODOT Region Number,crash
+dist_id,District ID,"char(3), null",ODOT District Number,crash
+seg_mrk_id,Segment Marker ID,"varchar(30), null",OR-Trans Segment Identifier,crash
+seg_pt_lrs_meas,Segment Point LRS Measure,"float, null",The value in feet along a segment; used with Segment Marker ID,crash
+unloct_flg,Unlocatable Flag,"bit, not null","Indicates crash can not be geocoded on OR-Trans road network, due to lack of information on crash report or unavailable linework",crash
+tot_vhcl_cnt,Total Vehicle Count,"integer, not null",Number of vehicles involved in the crash.,crash
+tot_fatal_cnt,Total Fatality Count,"integer, not null",Number of people killed as a result of the crash.,crash
+tot_inj_lvl_a_cnt,Total Serious Injury (Inj-A) Count,"integer, not null",Number of people who suffered serious injuries in the crash.  Excludes fatalities.,crash
+tot_inj_lvl_b_cnt,Total Moderate Injury (Inj-B) Count,"integer, not null",Number of people who suffered moderate injuries in the crash.,crash
+tot_inj_lvl_c_cnt,Total Minor Injury (Inj-C) Count,"integer, not null",Number of people who suffered minor injuries in the crash.,crash
+tot_inj_cnt,Total Non-Fatal Injury Count,"integer, not null",Total number of people suffered a non-fatal injury in the crash.,crash
+tot_uninjd_age00_04_cnt,Total Count of Un-Injured  Children Age 00-04,"integer, not null",Number of children age 0 – 4 involved in the crash who were un-injured.,crash
+tot_uninjd_per_cnt,Total Count of Un-Injured Persons,"integer, not null","Number of all persons involved in the crash who were un-injured. Un-injured Non-drivers (including children over age 4) are counted in this field, but no record is created for them on the PARTIC table. ",crash
+tot_ped_cnt,Total Pedestrian Count,"integer, not null",Number of pedestrians involved in the crash.,crash
+tot_ped_fatal_cnt,Total Pedestrian Fatality Count,"integer, not null",Number of pedestrians killed as a result of the crash.,crash
+tot_ped_inj_cnt,Total Pedestrian Non-Fatal Injury Count,"integer, not null",Number of pedestrians who suffered non-fatal injuries as a result of the crash.,crash
+tot_pedcycl_cnt,Total Pedalcyclist Count,"integer, not null","Number of pedal-cyclists (bicyclists, tricyclists, etc.) involved in the crash.",crash
+tot_pedcycl_fatal_cnt,Total Pedalcyclist Fatality Count,"integer, not null",Number of pedal-cyclists killed as a result of the crash.,crash
+tot_pedcycl_inj_cnt,Total Pedalcyclist Non-Fatal Injury Count,"integer, not null",Number of pedal-cyclists who suffered non-fatal injuries as a result of the crash.,crash
+tot_unknwn_cnt,Total Unknown Non-Motorist Count,"integer, not null",Number of other or unknown type non-motorists involved in the crash.,crash
+tot_unknwn_fatal_cnt,Total Unknown Non-Motorist Fatality Count,"integer, not null",Number of other/unknown type non-motorists killed as a result of the crash.,crash
+tot_unknwn_inj_cnt,Total Unknown Non-Motorist Injury Count,"integer, not null",Number of other/unknown type non-motorists suffered non-fatal injuries as a result of the crash.,crash
+tot_occup_cnt,Total Vehicle Occupant Count,"integer, not null",Number of Motor Vehicle Occupants involved in the crash.,crash
+tot_per_invlv_cnt,Total Count of Persons Involved,"integer, not null","Total number of persons involved in the crash, including un-injured persons for whom no record is created on the PARTIC table.",crash
+tot_sfty_equip_used_qty,Total Quantity of Persons Using Safety Equipment,"integer, not null",,crash
+tot_sfty_equip_unused_qty,Total Quantity of Persons Not Using Safety Equipment,"integer, not null",,crash
+tot_sfty_equip_use_unknown_qty,"Total Quantity of Persons Safety Equipment ""Use Unknown""","integer, not null",,crash
+vhcl_ownshp_cd,Vehicle Ownership  Code,"char(1), not null",,vhcl
+vhcl_use_cd,Vehicle Special Use Code,"char(1), not null",,vhcl
+vhcl_typ_cd,Vehicle Type Code,"char(2), not null",,vhcl
+emrgcy_vhcl_use_flg,Emergency Use Flag,"bit, not null",Indicates whether or not this vehicle was in emergency use at the time of the crash. May be imported as Yes/No field,vhcl
+trlr_qty,Number of Trailers,"tinyint, null",Code representing the number of trailers or whether the vehicle was trailering.,vhcl
+vhcl_mvmnt_cd,Vehicle Movement Code,"char(1), not null",,vhcl
+cmpss_dir_from_cd,Vehicle Travel Dir. From,"char(1), not null",,vhcl
+cmpss_dir_to_cd,Vehicle Travel Dir. To,"char(1), not null",,vhcl
+actn_cd,Vehicle Action Code,"char(3), null",Activity associated with this vehicle prior to or during the crash.,vhcl
+vhcl_cause_1_cd,Vehicle Cause 1 Code,"char(2), null",Up to 3 “causes” can be coded per vehicle.,vhcl
+vhcl_cause_2_cd,Vehicle Cause 2 Code,"char(2), null",  ,vhcl
+vhcl_cause_3_cd,Vehicle Cause 3 Code,"char(2), null",  ,vhcl
+vhcl_evnt_1_cd,Vehicle Event 1,"char(3), null",Up to 3 “events” can be coded per vehicle.,vhcl
+vhcl_evnt_2_cd,Vehicle Event 2 Code,"char(3), null",  ,vhcl
+vhcl_evnt_3_cd,Vehicle Event 3 Code,"char(3), null",  ,vhcl
+vhcl_speed_flg,Vehicle Speed Flag,"bit, not null",Indicates this vehicle was exceeding the posted speed limit. May be imported as Yes/No field,vhcl
+vhcl_hit_run_flg,Vehicle Hit & Run Flag,"bit, not null",Indicates that this vehicle left the scene of the crash. May be imported as Yes/No field,vhcl
+vhcl_sfty_equip_used_qty,Safety Equipment Used Quantity,"tinyint, not null",Count of all persons in this vehicle who used safety equipment,vhcl
+vhcl_sfty_equip_unused_qty,Safety Equipment Un-used Quantity,"tinyint, not null",Count of all persons in this vehicle for whom no safety equipment was used,vhcl
+vhcl_sfty_equip_use_unknwn_qty,Safety Equipment Use Unknown Quantity,"tinyint, not null",Count of all persons in this vehicle for whom safety equipment use is not known,vhcl
+vhcl_occup_cnt,Vehcle Occupant Count,"tinyint, not null",Count of all occupants in this vehicle,vhcl
+strikg_vhcl_flg,Vehicle Striking Flag,"bit, not null","When '1', indicates this vehicle is the ""striker"" (made first contact). Does not infer fault.",vhcl
+partic_typ_cd,Participant Type Code,"char(1), not null",,partic
+partic_hit_run_flg,Participant Hit & Run Flag,"bit, not null",Indicates that this person left the scene of the crash. May be imported as Yes/No field,partic
+pub_empl_flg,Public Employee Flag,"bit, not null",Indicates this person was working as a public employee at the time of the crash.,partic
+sex_cd,Sex,"char(1), not null",,partic
+age_val,Age,"char(2), not null",,partic
+drvr_lic_stat_cd,Driver License Status,"char(1), null",Coded only for drivers.,partic
+drvr_res_stat_cd,Driver Residence,"char(1), null",Coded only for drivers.,partic
+inj_svrty_cd,Injury Severity,"char(1), not null",This participant’s injury severity.,partic
+sfty_equip_use_cd,Participant Safety Equipment Use Code,"char(1), null",,partic
+airbag_deploy_ind,Airbag Deployment,"char(1), null",Indicates whether or not an airbag was available and/or deployed. Not available prior to 2002,partic
+mvmnt_cd,Non-Motorist Movement Code,"char(1), null",Coded only for non-motorists.,partic
+cmpss_dir_from_cd,Non-Motorist Travel Direction From,"char(1), null",Coded only for non-motorists.,partic
+cmpss_dir_to_cd,Non-Motorist Travel Direction To,"char(1), null",Coded only for non-motorists.,partic
+non_motrst_loc_cd,Non-Motorist Location,"char(2), null",Coded only for non-motorists.  Location in relation to the roadway.,partic
+actn_cd,Participant Action,"char(3), null",Activity associated with this participant prior to or during the crash.,partic
+partic_err_1_cd,Participant Error 1 Code,"char(3), null",Occurs only on Participant Table.  Up to 3 “errors” may be coded per participant.,partic
+partic_err_2_cd,Participant Error 2 Code,"char(3), null",  ,partic
+partic_err_3_cd,Participant Error 3 Code,"char(3), null",  ,partic
+partic_cause_1_cd,Participant Cause 1 Code,"char(2), null",Up to 3 causes may be coded per participant.,partic
+partic_cause_2_cd,Participant Cause 2 Code,"char(2), null",  ,partic
+partic_cause_3_cd,Participant Cause 3 Code,"char(2), null",  ,partic
+partic_evnt_1_cd,Participant Event 1 Code,"char(3), null",Up to 3 “events” may be coded per participant.,partic
+partic_evnt_2_cd,Participant Event 2 Code,"char(3), null",  ,partic
+partic_evnt_3_cd,Participant Event 3 Code,"char(3), null",  ,partic
+bac_val,BAC Test Results Code,"char(2), null","Blood Alcohol Content value, or code (see Code Manual).",partic
+alchl_use_rpt_ind,Alcohol Use Reported,"char(1), null","Indicates whether or not this participant had been drinking, if info is available.",partic
+drug_use_rpt_ind,Drug Use Reported,"char(1), null","Indicates whether or not this participant had been using drugs, if info is available.",partic
+strikg_partic_flg,Participant Striker Flag,"bit, not null","When '1', indicates this vehicle is the ""striker"" (made first contact). Can apply to non-motorists. Does not infer fault.",partic

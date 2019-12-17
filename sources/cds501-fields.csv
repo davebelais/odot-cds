@@ -30,8 +30,8 @@ lat_sec_no,Latitude Seconds,"decimal(9,7), null",,crash
 longtd_deg_no,Longitude Degrees,"integer, null",,crash
 longtd_minute_no,Longitude Minutes,"integer, null",,crash
 longtd_sec_no,Longitude Seconds,"decimal(9,7), null",,crash
-specl_jrsdct_id,Special Jurisdiction,"char(2), null",For recreational road coding,crash
-jrsdct_grp_cd,Jurisdiction Group,"char(2), not null",For recreational road coding,crash
+specl_jrsdct_id,Special RoadType,"char(2), null",For recreational road coding,crash
+jrsdct_grp_cd,RoadType Group,"char(2), not null",For recreational road coding,crash
 agy_st_no,Street Number,"char(7), null",Field length is 5 for City Streets; up to 7 for County Roads.  Not coded for rural highways.,crash
 isect_agy_st_no,Nearest Intersecting Street Number,"char(7), null",Field length is 5 for City Streets; up to 7 for County Roads.  Not coded for rural highways.,crash
 isect_seq_no,Intersection Sequence Number,"small int, null","Coded for intersectional crashes only. Default is ‘1’; otherwise, sequential for pairs of streets that intersect multiple times.",crash
