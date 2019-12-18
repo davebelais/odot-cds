@@ -1,13 +1,5 @@
 # Oregon Department of Transportation - Crash Data System
 
-This package holds data from the Oregon Department of Transportation
-(ODOT) Crash Data System (CDS), in parquet format.
-
-Sources:
- - https://zigzag.odot.state.or.us
- - ftp://ftp.odot.state.or.us/tdb/trandata/GIS_data/Safety
- 
- 
-Data Dictionary:
-
-...(WIP)
+This package (which is currently a WIP) provides a client interface for 
+extracting data from the [Oregon Department of Transportation's (ODOT's) Crash 
+Data System (CDS)](https://zigzag.odot.state.or.us).
