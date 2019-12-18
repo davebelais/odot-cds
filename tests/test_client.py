@@ -103,10 +103,10 @@ def _extract_all_roads_query_types(
     **parameters
 ) -> None:
     for query_type in (
-        "All Roads",
-        "County Roads",
-        "City Streets",
-        "State Highways"
+        'rdoSumQueryTypeALL',  # All Roads
+        'rdoSumQueryTypeCNTY',  # County Roads
+        'rdoSumQueryTypeCITY',  # "City Streets",
+        'rdoSumQueryTypeSTATE',  # State Highways
     ):
         parameters.update(query_type=query_type)
         _extract_and_validate(**parameters)
@@ -137,8 +137,8 @@ def _extract_local_roads_streets(
         )
     )
     if parameters['query_type'] in (
-        'opnLclSPQuery', 'Specified Streets Not Limited to Intersection',
-        'opnLclINQuery', 'Intersectional'
+        'opnLclSPQuery',
+        'opnLclINQuery',
     ):
         # Set the street, so that the `cross_street` options get updated
         connection.update_form_field(
@@ -163,13 +163,16 @@ def _extract_local_roads_query_types(
 ) -> None:
     if parameters['city'] in ('000', 'Outside City Limits'):
         query_types = (
-            "Mile-Pointed County Road",
+            'rdoLclQueryTypeMP',  # Mile-Pointed County Road
         )
     else:
         query_types = (
-            "Street Segment & Intersectional",
-            "Specified Streets Not Limited to Intersection",
-            "Intersectional"
+            # Street Segment & Intersectional
+            'rdoLclQueryTypeSI',
+            # Specified Streets Not Limited to Intersection
+            'rdoLclQueryTypeSP',
+            # Intersectional
+            'rdoLclQueryTypeIN'
         )
     for query_type in query_types:
         parameters.update(query_type=query_type)
@@ -192,9 +195,9 @@ def _extract_local_roads_county(
 def _extract_all_roads(
     **parameters
 ) -> None:
-    for jurisdiction in ('County', 'City'):
+    for jurisdiction in ('rdoSumJurisdictionCNTY', 'rdoSumJurisdictionCITY'):
         parameters.update(jurisdiction=jurisdiction)
-        if jurisdiction == 'County':
+        if jurisdiction == 'rdoSumJurisdictionCNTY':
             _extract_all_roads_county(**parameters)
         else:
             _extract_all_roads_city(**parameters)
@@ -246,6 +249,14 @@ def _extract_local_roads(
     **parameters
 ) -> None:
     connection: client.Client = client.connect(echo=_ECHO)
+    # Choose a county at random
+    parameters.update(
+        county=random.choice(
+            tuple(
+                connection.form_fields.local_roads_county.options.keys()
+            )
+        )
+    )
     # Set the county, so that the city/section options get updated
     connection.update_form_field(
         'local_roads_county',
@@ -258,6 +269,11 @@ def _extract_local_roads(
                 connection.form_fields.local_roads_city.options.keys()
             )
         )
+    )
+    # Set the city/section, so that the street options get updated
+    connection.update_form_field(
+        'local_roads_city',
+        parameters['city']
     )
     _extract_local_roads_query_types(**parameters)
 

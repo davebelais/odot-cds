@@ -637,7 +637,7 @@ class FormField:
                     self.options.values()
                 ):
                     raise ValueError(
-                        '%s is not a value value. Valid values include:\n' %
+                        '%s is not a valid value. Valid values include:\n' %
                         repr(value) +
                         '\n'.join(
                             '- %s: %s' % (key, repr(value))
@@ -1348,7 +1348,7 @@ class Client:
         jurisdiction: str = '',
         county: str = '',
         city: str = '',
-        query_type: str = 'All Roads',
+        query_type: str = 'rdoSumQueryTypeALL',
         begin_date: date = DEFAULT_BEGIN_DATE,
         end_date: date = DEFAULT_END_DATE
     ) -> None:
@@ -1390,7 +1390,7 @@ class Client:
         city: str = '',
         street: str = '',
         cross_street: str = '',
-        query_type: str = 'All Roads',
+        query_type: str = 'rdoSumQueryTypeALL',
         begin_mile_point: float = 0.0,
         end_mile_point: float = 0.0,
         begin_date: date = DEFAULT_BEGIN_DATE,
@@ -1635,9 +1635,11 @@ class Client:
 
           This applies only if `road_type == RoadType.ALL`.
 
-          - "County": Return all crashes for a specified county.
+          - "rdoSumJurisdictionCNTY" ("County"):
+            Return all crashes for a specified county.
 
-          - "City": Return all crashes for a specified city.
+          - "rdoSumJurisdictionCITY" ("City"):
+            Return all crashes for a specified city.
 
         - county (str):
 
@@ -1672,18 +1674,19 @@ class Client:
 
           If `road_type == RoadType.ALL`, options for this will include:
 
-          - "All Roads" (default)
-          - "County Roads"
-          - "City Streets"
-          - "State Highways"
+          - "rdoSumQueryTypeALL": All Roads (default)
+          - "rdoSumQueryTypeCNTY": County Roads
+          - "rdoSumQueryTypeCITY": City Streets
+          - "rdoSumQueryTypeSTATE": State Highways
 
           If `road_type == RoadType.LOCAL`, options for this will include:
 
-          - "Street Segment & Intersectional" (default)
-          - "Specified Streets Not Limited to Intersection"
-          - "Intersectional"
-          - "Mile-Pointed County Road" (This is the only option if `city` is
-            "000" or "Outside City Limits")
+          - "rdoLclQueryTypeSI": Street Segment & Intersectional (this is the
+            default, unless `city` is "000" or "Outside City Limits")
+          - "rdoLclQueryTypeSP": Specified Streets Not Limited to Intersection
+          - "rdoLclQueryTypeIN": Intersectional
+          - "rdoLclQueryTypeMP": Mile-Pointed County Road (this is the *only*
+            option if `city` is "000" (Outside City Limits)
 
         - highway (str):
 
