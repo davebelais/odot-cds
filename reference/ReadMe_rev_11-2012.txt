@@ -24,7 +24,7 @@ II.  Explanation of System-generated and Summary Fields
 ------------------------------------------------------------------------------------------
 A.	Description of system-generated fields available in Raw Data Extracts and Decode Database
 
-	The Raw Data Extract (CDS501) and Decode Database (CDS510) contain fields which were developed for the purpose of simplifying querying. Depending on the user's search criteria, use of these fields can eliminate the need for writing complex queries and linking tables. The “Data Extract Code Descriptions” manual, available on the Crash Analysis & Reporting Unit’s web page, provides information specific to each system-generated field.  Please visit this link: http://www.oregon.gov/ODOT/TD/TDATA/pages/car/car_publications.aspx
+	The Raw Data Extract (CDS501) and Decode Database (CDS510) contain fields which were developed for the purpose of simplifying querying. Depending on the user's search criteria, use of these fields can eliminate the need for writing complex queries and linking tables. The ï¿½Data Extract Code Descriptionsï¿½ manual, available on the Crash Analysis & Reporting Unitï¿½s web page, provides information specific to each system-generated field.  Please visit this link: http://www.oregon.gov/ODOT/TD/TDATA/pages/car/car_publications.aspx
 
      1.  Crash Level
 	-  Alcohol-Involved: Crashes where an active participant had been drinking. 
@@ -80,15 +80,15 @@ IV.  Raw Data Extract Files and Column Headers
 
 The Raw Data Extract files contain all available data on the selected crashes. Each crash case contains three different types of records: Crash, Vehicle and Participant.  For each crash case included in the text file: 
 
-     •   One record is written for the crash information.  This record is identified by a “1” in the “Record Type” column.  
-     •   One record is written for each vehicle that is involved in the crash. These records are identified by a “2” in the “Record Type” column. 
-     •   One record is written for each Participant that is involved in the Crash.  These records are identified by a “3” in the “Record Type” column.   The Vehicle Identifier on the Participant record is used to relate the Vehicle to each Participant who occupied it. 
+     ï¿½   One record is written for the crash information.  This record is identified by a ï¿½1ï¿½ in the ï¿½Record Typeï¿½ column.  
+     ï¿½   One record is written for each vehicle that is involved in the crash. These records are identified by a ï¿½2ï¿½ in the ï¿½Record Typeï¿½ column. 
+     ï¿½   One record is written for each Participant that is involved in the Crash.  These records are identified by a ï¿½3ï¿½ in the ï¿½Record Typeï¿½ column.   The Vehicle Identifier on the Participant record is used to relate the Vehicle to each Participant who occupied it. 
 
 For each case, the Crash record is followed by the first Vehicle record or Non-Motorist record for that crash.  Vehicle records are followed by all associated Participant records (vehicle occupants). Additional Vehicle records, Participant records, and Non-Motorist records follow, generally in accordance with the crash's sequence of events. 
 
-The “Vehicle Id” value on the Participant records can be used to link each vehicle occupant to its associated vehicle.  Please note that Pedestrians, Pedalcyclists, and Unknown Non-Motorists are no longer tied to a “virtual” vehicle. As a result, the “Vehicle Id” value on those Participant records is blank or zero. 
+The ï¿½Vehicle Idï¿½ value on the Participant records can be used to link each vehicle occupant to its associated vehicle.  Please note that Pedestrians, Pedalcyclists, and Unknown Non-Motorists are no longer tied to a ï¿½virtualï¿½ vehicle. As a result, the ï¿½Vehicle Idï¿½ value on those Participant records is blank or zero. 
    
-All fields are in text-compatible format.  No fields are “packed” or “over punched”.  All fields include leading zeros when applicable. Numeric fields that can potentially contain a minus sign have either a zero or a minus in the first character. The decimal point character is included in the output field when it is applicable for the given data item. Examples: a milepoint value of 23.45 is shown as “0023.45”. A milepoint value of –46.00 is shown as “-046.00”. 
+All fields are in text-compatible format.  No fields are ï¿½packedï¿½ or ï¿½over punchedï¿½.  All fields include leading zeros when applicable. Numeric fields that can potentially contain a minus sign have either a zero or a minus in the first character. The decimal point character is included in the output field when it is applicable for the given data item. Examples: a milepoint value of 23.45 is shown as ï¿½0023.45ï¿½. A milepoint value of ï¿½46.00 is shown as ï¿½-046.00ï¿½. 
 
 When a field is null in the master SQL database, it is null (represented only by a comma) in the CDS501 raw data extract. 
    
@@ -108,7 +108,7 @@ V.  Decode Database
 ------------------------------------------------------------------------------------------
      A.   Description
 
-The Decode Database is an MS Access database that is loaded with your requested subset of crash data.  There are three (3) master data tables:  CRASH, VHCL and PARTIC.  The remaining tables are look-up tables. The table structure and lookup tables are documented in Section IV of the “Data Extract Code Descriptions” manual on our web page:  http://www.oregon.gov/ODOT/TD/TDATA/pages/car/car_publications.aspx
+The Decode Database is an MS Access database that is loaded with your requested subset of crash data.  There are three (3) master data tables:  CRASH, VHCL and PARTIC.  The remaining tables are look-up tables. The table structure and lookup tables are documented in Section IV of the ï¿½Data Extract Code Descriptionsï¿½ manual on our web page:  http://www.oregon.gov/ODOT/TD/TDATA/pages/car/car_publications.aspx
 
 Use of the CDS Decode Database requires experience working with MS Access or other database applications. 
 
@@ -117,7 +117,7 @@ Use of the CDS Decode Database requires experience working with MS Access or oth
 
      The Decode Database contains two types of built-in reports. 
 	
-     1.  Code Tables provide code descriptions for use in deciphering the codes used in the reports. They are:
+     1.  Code Dimensions provide code descriptions for use in deciphering the codes used in the reports. They are:
 	    
 	 - ACTN	Action
 	 - CAUSE	Cause
@@ -158,7 +158,7 @@ The Crash Analysis and Reporting Unit compiles data for reported motor vehicle t
 
 A higher number of crashes are reported for the 2011 data file compared to previous years.  This does not reflect an increase in annual crashes. The higher numbers result from a change to an internal departmental process that allows the Crash Analysis and Reporting Unit to add previously unavailable, non-fatal crash reports to the annual data file.  Please be aware of this change when comparing pre-2011 crash statistics.
 
-Legally reportable motor vehicle traffic crashes are those involving death, bodily injury, or damage to personal property in excess of $500 (for crashes that occurred prior to 09/01/1997) or $1000 (for crashes that occurred between 09/01/1997 and 12/31/2003).  As of 01/01/2004, drivers are required to file an Accident and Insurance Report Form with DMV within 72 hours when damage to the driver's vehicle is over $1,500; damage to any vehicle is over $1,500 and any vehicle is towed from the scene as a result of damage from the accident; if injury or death resulted from the accident; or if damage to any one person’s property other than a vehicle involved in the accident is over $1,500.  For more information on filing requirements, please contact DMV. 
+Legally reportable motor vehicle traffic crashes are those involving death, bodily injury, or damage to personal property in excess of $500 (for crashes that occurred prior to 09/01/1997) or $1000 (for crashes that occurred between 09/01/1997 and 12/31/2003).  As of 01/01/2004, drivers are required to file an Accident and Insurance Report Form with DMV within 72 hours when damage to the driver's vehicle is over $1,500; damage to any vehicle is over $1,500 and any vehicle is towed from the scene as a result of damage from the accident; if injury or death resulted from the accident; or if damage to any one personï¿½s property other than a vehicle involved in the accident is over $1,500.  For more information on filing requirements, please contact DMV. 
 
 The Crash Analysis and Reporting Unit is committed to providing the highest quality crash data to customers.  However, because submittal of crash report forms is the responsibility of the individual driver, the Crash Analysis and Reporting Unit cannot guarantee that all qualifying crashes are represented; nor can assurances be made that all details pertaining to a single crash are accurate.  
 

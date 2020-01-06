@@ -205,6 +205,11 @@ class InvalidRoadTypeExtractError(Exception):
     pass
 
 
+class DisabledFormElementError(Exception):
+
+    pass
+
+
 class _ZigZag:
     """
     This class represents a connection to https://zigzag.odot.state.or.us/
@@ -347,7 +352,6 @@ class _ZigZag:
             self._tvc_url = anchor.attrib['href']
         return self._tvc_url
 
-    @functools.lru_cache()
     def get_tvc_default(self, **data: str) -> HTTPResponse:
         return self.request(
             self.tvc_url + 'default.aspx',
@@ -359,7 +363,10 @@ class _ZigZag:
             method='POST'
         )
 
-    def get_tvc_default_tree(self, **data: str) -> str:
+    def get_tvc_default_tree(
+        self,
+        **data: str
+    ) -> str:
         response: HTTPResponse = self.get_tvc_default(**data)
         tvc_default: str = str(
             response.read(),
@@ -576,6 +583,7 @@ class FormField:
         name: str = '',
         options: Optional[Dict[str, str]] = None,
         value: str = '',
+        disabled: bool = False,
         **kwargs
     ):
         self._value: str = ''
@@ -588,6 +596,7 @@ class FormField:
         self.value = value
         self.x: int = 0
         self.y: int = 0
+        self.disabled: bool = disabled
 
     def reset(self) -> None:
         """
@@ -596,12 +605,18 @@ class FormField:
         self.x = 0
         self.y = 0
         self.value = ''
+        self.disabled = False
 
     def click(self) -> None:
         """
         The button is 155 x 32 pixels. We assume the average click would be in
         the center of the button, and use gaussian distribution to randomize.
         """
+        if self.disabled:
+            raise DisabledFormElementError(
+                'Apologies, this report is not available for the parameters '
+                'you have provided'
+            )
         self.x = int(random.gauss(77, 77))
         self.y = int(random.gauss(16, 33))
 
@@ -653,13 +668,15 @@ class FormField:
             'type={type}, '
             'name={name}, '
             'options={options} ,'
-            'value={value}'
+            'value={value},'
+            'disabled={disabled}'
             ')'.format(
                 tag=repr(self.tag),
                 type=repr(self.type),
                 name=repr(self.name),
                 options=repr(self.options),
-                value=repr(self.value)
+                value=repr(self.value),
+                disabled=repr(self.disabled)
             )
         )
 
@@ -1051,6 +1068,7 @@ def _inspect_select_field(
 
 class Extract(enum.Enum):
 
+    CDS501 = enum.auto()
     CDS150 = enum.auto()
     CDS160 = enum.auto()
     CDS190b = enum.auto()
@@ -1059,7 +1077,6 @@ class Extract(enum.Enum):
     CDS280 = enum.auto()
     CDS380 = enum.auto()
     CDS390 = enum.auto()
-    CDS501 = enum.auto()
     CDS510 = enum.auto()
     DIRECTION = enum.auto()
     RRR = enum.auto()
@@ -1072,9 +1089,9 @@ class Extract(enum.Enum):
 
 class RoadType(enum.Enum):
 
+    ALL = enum.auto()
     HIGHWAY = enum.auto()
     LOCAL = enum.auto()
-    ALL = enum.auto()
 
     def __repr__(self):
         return "%s.%s" % (
@@ -1122,6 +1139,7 @@ class Client:
         A code -> value mapping for all state highways in Oregon.
         """
         if not self._highways:
+            self.reset_form_fields()
             highways = {}
             for key, value in self.form_fields.highways_number.options.items():
                 highways[value] = key
@@ -1135,13 +1153,13 @@ class Client:
         A code -> value mapping for all counties in Oregon.
         """
         if not self._counties:
+            self.reset_form_fields()
             counties = {}
             for key, value in (
                 self.form_fields.local_roads_county.options.items()
             ):
                 counties[value] = key
             self._counties = counties
-            self.form_fields.reset()
         return self._counties
 
     @property
@@ -1150,6 +1168,7 @@ class Client:
         A code -> value mapping for all cities in Oregon.
         """
         if not self._cities:
+            self.reset_form_fields()
             self.update_form_field(
                 'all_roads_jurisdiction',
                 'City'
@@ -1160,7 +1179,6 @@ class Client:
             ):
                 cities[value] = key
             self._cities = cities
-            self.form_fields.reset()
         return self._cities
 
     def get_streets(self, county: str, city: str) -> Dict[str, str]:
@@ -1173,6 +1191,7 @@ class Client:
 
         - city (str): The city name or code, or "Outside City Limits".
         """
+        self.reset_form_fields()
         self.update_form_field(
             'local_roads_county',
             county
@@ -1193,7 +1212,6 @@ class Client:
                     self.form_fields.local_roads_street.options.items()
                 ):
                     streets[value] = key
-        self.form_fields.reset()
         return streets
 
     def _get_radio_label(self, id_: str) -> str:
@@ -1220,10 +1238,16 @@ class Client:
             name=form_field.name
         )
         form_field.options: Dict[str, str] = {}
+        form_field.disabled = False
         # Find this field in the TVC form
         for element in (
             self._zig_zag.tvc_tree.xpath(xpath)
         ):  # type: lxml.etree.Element
+            # Is the field disabled?
+            if 'disabled' in element.attrib and element.attrib[
+                'disabled'
+            ] == 'disabled':
+                form_field.disabled = True
             # Get the valid value options
             if form_field.tag == 'select':
                 _inspect_select_field(
@@ -1285,7 +1309,6 @@ class Client:
         """
         Update option values based on current form field selections
         """
-        # print(attribute_name + ' = ' + repr(value))
         form_field: FormField = getattr(self.form_fields, attribute_name)
         # Convert the value to a string
         if isinstance(value, date):
@@ -1362,7 +1385,7 @@ class Client:
         self.update_form_field('all_roads_query_type', query_type)
         self.update_form_field('all_roads_begin_date', begin_date)
         self.update_form_field('all_roads_end_date', end_date)
-        self.update_form_field('all_roads_format', 'Excel Format')
+        self.update_form_field('all_roads_format', 'rdoSumReportFormatXLS')
         # "Click" on the extract
         if extract == Extract.CDS150:
             self.form_fields.all_roads_command_cds150.click()
@@ -1414,7 +1437,7 @@ class Client:
         )
         self.update_form_field('local_roads_begin_date', begin_date)
         self.update_form_field('local_roads_end_date', end_date)
-        self.update_form_field('local_roads_format', 'Excel Format')
+        self.update_form_field('local_roads_format', 'rdoLclReportFormatXLS')
         self.update_form_field(
             'local_roads_record_number',
             str(record_number or '')
@@ -1532,7 +1555,7 @@ class Client:
         )
         self.update_form_field('highways_begin_date', begin_date)
         self.update_form_field('highways_end_date', end_date)
-        self.update_form_field('highways_format', 'Excel Format')
+        self.update_form_field('highways_format', 'rdoHwyReportFormatXLS')
         self.update_form_field(
             'highways_record_number',
             str(record_number or '')
@@ -1560,6 +1583,15 @@ class Client:
             raise InvalidRoadTypeExtractError(
                 '%s is not a valid extract for "Highways"' % repr(extract)
             )
+
+    def reset_form_fields(self) -> None:
+        """
+        This method resets all form fields to their default, and refreshes the
+        view state
+        """
+        self.form_fields.reset()
+        self._zig_zag.get_tvc_tree()
+        self._inspect_form_fields()
 
     def extract(
         self,
@@ -1721,6 +1753,7 @@ class Client:
         in ODOT's [CDS code manual](
         https://www.oregon.gov/ODOT/Data/documents/CDS_Code_Manual.pdf).
         """
+        self.reset_form_fields()
         assert isinstance(extract, Extract)
         # Set a default query type if none is provided
         if not query_type:
@@ -1774,14 +1807,11 @@ class Client:
             )
         # Submit the form
         response = self.submit()
-        # Reset field values so they won't be incorrectly used in the next
-        # execution of this method
-        self.form_fields.reset()
         return response
 
 
 @functools.lru_cache(maxsize=2)
-def connect(echo: bool = True) -> Client:
+def connect(echo: bool = False) -> Client:
     """
     Create a new `Client` or connect to an existing (cached) `Client`
     """

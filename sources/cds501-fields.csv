@@ -1,4 +1,4 @@
-Name,Label,Format,Description,Tables
+Name,Label,Format,Description,Dimensions
 crash_id,Crash ID,"int, not null",The unique identifier for a given crash. This field is part of the primary key.,"crash, vhcl, partic"
 rec_typ_cd,Record Type,"char(1), not null","Indicates the data table: 1 = CRASH,  2 = VHCL (i.e, ""vehicle""), 3 = PARTIC (i.e., ""participant"")",
 vhcl_id,Vehicle ID,"int, not null",The unique identifier for a given vehicle. This field is part of the primary key.,"vhcl, partic"

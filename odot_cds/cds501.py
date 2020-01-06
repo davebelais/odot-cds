@@ -1,8 +1,14 @@
+import csv
+import sys
 from dataclasses import dataclass, fields
 from datetime import date
 from decimal import Decimal
 from http.client import HTTPResponse
+from io import StringIO
+from traceback import format_exception
 from typing import Optional, Iterable, Tuple, Set, List, Union
+
+import pandas
 
 from odot_cds import client
 
@@ -360,139 +366,45 @@ PARTIC_FIELD_NAMES = set(
 )
 
 
-def extract(
-    road_type: client.RoadType = client.RoadType.ALL,
-    jurisdiction: str = '',
-    county: str = '',
-    city: str = '',
-    street: str = '',
-    cross_street: str = '',
-    query_type: str = 'All Roads',
-    begin_date: date = client.DEFAULT_BEGIN_DATE,
-    end_date: date = client.DEFAULT_END_DATE,
-    report_format: str = 'Excel Format',
-    highway: str = '',
-    begin_mile_point: float = 0.0,
-    end_mile_point: float = 0.0,
-    highway_type: client.HighwayType = client.HighwayType.ALL,
-    z_mile_points: bool = True,
-    add_mileage: bool = True,
-    non_add_mileage: bool = True
-) -> Iterable[CDS501]:
-    """
-    This method yields a series of `CDS501` instances.
-
-    Parameters:
-
-    - road_type (RoadType):
-
-      This indicates the type of roads to retrieve crash data for.
-
-      - RoadType.ALL: Both highways and local roads (default)
-
-      - RoadType.HIGHWAY: State highways
-
-      - RoadType.LOCAL: Local roads
-
-    - jurisdiction (str):
-
-      This applies only if `road_type == RoadType.ALL`.
-
-      - "County": Return all crashes for a specified county.
-
-      - "City": Return all crashes for a specified city.
-
-    - county (str):
-
-      The name or ID of a county. For a complete mapping of county names
-      to county IDs, create an instance of `Client` and inspect
-      `Client().form_fields.county`.
-
-    - city (str):
-
-      The name or ID of a city. For a complete mapping of city names
-      to city IDs, create an instance of `Client` and inspect
-      `Client().form_fields.city`.
-
-    - query_type (str):
-
-      The type of roads for which to retrieve crash data.
-
-      If `road_type == RoadType.ALL`, options for this will include:
-
-      - "All Roads" (default)
-      - "County Roads"
-      - "City Streets"
-      - "State Highways"
-
-      If `road_type == RoadType.LOCAL`, options for this will include:
-
-      - "Street Segment & Intersectional" (default)
-      - "Specified Streets Not Limited to Intersection"
-      - "Intersectional"
-      - "Mile-Pointed County Road"
-
-    - report_format (str):
-
-      This parameter does not apply if `extract == client.Extract.CDS501` or
-      `extract == client.Extract.CDS510`.
-
-      - "Excel Format" (default)
-      - "Print Format"
-
-    - highway (str):
-
-      The number + name of a highway.
-
-    - z_mile_points (bool)
-
-    - add_mileage (bool):
-
-      Include traffic traveling in a direction wherein progress corresponds
-      to a numeric increase for mileage markers.
-
-    - non_add_mileage (bool):
-
-      Include traffic traveling in a direction wherein progress corresponds
-      to a numeric decrease for mileage markers.
-
-    Additional information about terms used above can be found
-    in ODOT's [CDS code manual](
-    https://www.oregon.gov/ODOT/Data/documents/CDS_Code_Manual.pdf).
-    """
-    connection = client.connect()
-    response: HTTPResponse = connection.extract(
-        extract=client.Extract.CDS501,
-        road_type=road_type,
-        jurisdiction=jurisdiction,
-        county=county,
-        city=city,
-        street=street,
-        cross_street=cross_street,
-        query_type=query_type,
-        begin_date=begin_date,
-        end_date=end_date,
-        report_format=report_format,
-        highway=highway,
-        begin_mile_point=begin_mile_point,
-        end_mile_point=end_mile_point,
-        highway_type=highway_type,
-        z_mile_points=z_mile_points,
-        add_mileage=add_mileage,
-        non_add_mileage=non_add_mileage
-    )
+def read(response: HTTPResponse) -> Iterable[CDS501]:
+    # Make sure the response is for CDS501
+    content_disposition: str = response.headers['Content-disposition']
+    print(content_disposition)
+    assert content_disposition == 'attachment; filename=CDS501.txt'
+    for row in csv.reader(
+        str(
+            line,
+            encoding='utf-8'
+        ) for line in response.readlines()
+    ):
+        try:
+            yield CDS501(*row)
+        except TypeError:
+            raise TypeError(
+                 '%s\n(%s values)\n%s' % (
+                    repr(row),
+                    str(len(row)),
+                    ''.join(format_exception(*sys.exc_info()))
+                 )
+            )
 
 
-def get_crash_vhcl_partic(
+def split(
     rows: Iterable[CDS501]
-) -> (
+) -> Tuple[
     List[Crash],
     List[Vhcl],
     List[Partic]
-):
+]:
     """
-    Given an iterable of `CDS501` instances, return 3 iterables--one of
-    `Crash` instances, one of `Vhcl` instances, and one of `Partic` instances.
+    Given a result from `odot_cds.cds501.extract()`, return a `tuple` of 3
+    lists:
+
+        - A list of `Crash` instances
+
+        - A list of `Vhcl` instances, and
+
+        - A list of `Partic` instances
     """
     crash_rows: List[Crash] = []
     vhcl_rows: List[Vhcl] = []
@@ -520,4 +432,42 @@ def get_crash_vhcl_partic(
                     values.append(row[index])
             partic_rows.append(Partic(*values))
     return crash_rows, vhcl_rows, partic_rows
+
+
+def get_data_frames(
+    data: Union[
+        HTTPResponse,
+        Tuple[
+            List[Crash],
+            List[Vhcl],
+            List[Partic]
+        ],
+        Iterable[CDS501]
+    ]
+) -> Tuple[
+    pandas.DataFrame,
+    pandas.DataFrame,
+    pandas.DataFrame
+]:
+    """
+    Given an extract obtained from `odot_cds.client.Client.extract()`, return a
+    `tuple` of 3 data frames: one representing the `CRASH` table, one
+    representing the `VHCL` table, and one representing the `PARTIC` table.
+    """
+    if isinstance(data, HTTPResponse):
+        data: Iterable[CDS501] = read(data)
+    if not (isinstance(data, tuple) and len(data) == 3):
+        data: Tuple[
+            List[Crash],
+            List[Vhcl],
+            List[Partic]
+        ] = split(data)
+    crash_rows, vhcl_rows, partic_rows = data
+    return (
+        pandas.DataFrame(crash_rows),
+        pandas.DataFrame(vhcl_rows),
+        pandas.DataFrame(partic_rows)
+    )
+
+
 

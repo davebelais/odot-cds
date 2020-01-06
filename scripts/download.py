@@ -246,7 +246,7 @@ def download_safety_data(
     overwrite: bool = False
 ) -> None:
     """
-    This function will download safety tables files from the FTP *if they do
+    This function will download safety dimensions files from the FTP *if they do
     not already exist in the target directory*.
     """
     # Connect to the FTP

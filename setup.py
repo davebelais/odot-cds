@@ -19,7 +19,6 @@ setup(
     install_requires=[
         "sob>=0.1.33",
         "lxml>=4.4.2",
-        "pyarrow>=0.15.1",
         "pandas>=0.25.3",
         "iso8601>=0.1.12",
         "distro"

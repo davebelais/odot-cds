@@ -1,7 +1,7 @@
 # !/usr/bin python3
 
 """
-This script will prepare source tables as parquet files
+This script will prepare source dimensions as pickle files
 """
 import functools
 import os
@@ -20,7 +20,7 @@ REPOSITORY_DIRECTORY = os.path.dirname(
         os.path.abspath(__file__)
     )
 )
-PARQUET_TABLES_DIRECTORY = REPOSITORY_DIRECTORY + '/odot_cds/tables'
+PICKLE_TABLES_DIRECTORY = REPOSITORY_DIRECTORY + '/odot_cds/dimensions'
 SOURCES_DIRECTORY = REPOSITORY_DIRECTORY + '/sources'
 CDS510_SQLLITE_PATH = SOURCES_DIRECTORY + '/cds510.db'
 CDS501_CSV_DIRECTORY = SOURCES_DIRECTORY + '/cds501'
@@ -146,7 +146,7 @@ def get_cds501_fields(
 
         - Tables:
 
-          A comma-separated list of the tables in which this field appears.
+          A comma-separated list of the dimensions in which this field appears.
     """
     return tuple(read_csv(csv_path))
 
@@ -250,13 +250,13 @@ def read_cds501_csvs_table(
             yield row
 
 
-def cds501_csvs2parquet(
+def cds501_csvs2pickle(
     source_data_directory: str = CDS501_CSV_DIRECTORY,
-    parquet_directory: str = PARQUET_TABLES_DIRECTORY,
+    pickle_directory: str = PICKLE_TABLES_DIRECTORY,
     source_file_name: str = CDS501_CSV_FILE_NAME
 ) -> List[str]:
     """
-    Convert one or more CDS501 CSV extracts to a parquet data file.
+    Convert one or more CDS501 CSV extracts to a pickle data file.
 
     Parameters:
 
@@ -264,9 +264,9 @@ def cds501_csvs2parquet(
 
           The directory path in which to search for CDS501 CSV files.
 
-        - parquet_path (str):
+        - pickle_path (str):
 
-          The path where the parquet file should be written.
+          The path where the pickle file should be written.
 
         - source_file_name (str):
 
@@ -274,8 +274,8 @@ def cds501_csvs2parquet(
     """
     paths: List[str] = []
     for table in CDS_REC_TYP_CD_TABLES.values():
-        path: str = '%s/%s.parquet' % (parquet_directory, table)
-        write_parquet(
+        path: str = '%s/%s.pickle' % (pickle_directory, table)
+        write_pickle(
             path,
             read_cds501_csvs_table(
                 table,
@@ -287,12 +287,12 @@ def cds501_csvs2parquet(
     return paths
 
 
-def csv2parquet(
+def csv2pickle(
     source_path: str,
-    parquet_path: Optional[str] = None
+    pickle_path: Optional[str] = None
 ) -> str:
     """
-    Convert a CSV file to a parquet file.
+    Convert a CSV file to a pickled data frame.
 
     Parameters:
 
@@ -300,46 +300,46 @@ def csv2parquet(
 
           The path where the source CSV is located.
 
-        - parquet_path (str):
+        - pickle_path (str):
 
-          The path where the parquet file should be written.
+          The path where the pickle file should be written.
     """
-    if not parquet_path:
-        parquet_path = '%s/%s.parquet' % (
-            PARQUET_TABLES_DIRECTORY,
+    if not pickle_path:
+        pickle_path = '%s/%s.pickle' % (
+            PICKLE_TABLES_DIRECTORY,
             '.'.join(
                 source_path.split('/')[-1].split('.')[:-1]
             )
         )
-    write_parquet(
-        parquet_path,
+    write_pickle(
+        pickle_path,
         read_csv(source_path)
     )
-    return parquet_path
+    return pickle_path
 
 
-def write_parquet(
+def write_pickle(
     path: str,
     data: Union[Iterable[dict], pandas.DataFrame]
 ) -> None:
     """
-    Write tables to a parquet file.
+    Write dimensions to a pickle file.
 
     Parameters:
 
         - path (str):
 
-          A file path where the parquet file should be written.
+          A file path where the pickle file should be written.
 
-        - tables ([dict]|pandas.DataFrame):
+        - dimensions ([dict]|pandas.DataFrame):
 
-          Either an iterable of dictionary instances, or a tables frame.
+          Either an iterable of dictionary instances, or a dimensions frame.
     """
     if isinstance(data, pandas.DataFrame):
         data_frame = data
     else:
         data_frame = pandas.DataFrame(data)
-    data_frame.to_parquet(path)
+    data_frame.to_pickle(path)
 
 
 def fetchall(
@@ -395,15 +395,15 @@ def read_cds510(
             )
 
 
-def csv510_sqlite2parquet(
+def csv510_sqlite2pickle(
     sqlite_path: str = CDS510_SQLLITE_PATH,
-    parquet_directory: str = PARQUET_TABLES_DIRECTORY
+    pickle_directory: str = PICKLE_TABLES_DIRECTORY
 ) -> None:
     """
-    Given the path to a CSV510 sqlite database--export all tables as parquet
+    Given the path to a CSV510 sqlite database--export all dimensions as pickle
     files.
     """
-    with open('%s/cds501.py' % parquet_directory, 'w') as tables_init_io:
+    with open('%s/cds501.py' % pickle_directory, 'w') as tables_init_io:
         for (
             table,  # type: str
             data_frame  # type: pandas.DataFrame
@@ -415,8 +415,8 @@ def csv510_sqlite2parquet(
                 )
             )
             if table not in CDS_EXCLUDE_SQLITE_TABLES:
-                write_parquet(
-                    '%s/%s.parquet' % (parquet_directory, table.lower()),
+                write_pickle(
+                    '%s/%s.pickle' % (pickle_directory, table.lower()),
                     data_frame
                 )
 
@@ -468,12 +468,12 @@ def get_cds510_class_definitions() -> str:
 
 
 if __name__ == '__main__':
-    # # Extract reference tables from the CDS510 sqlite database (converted from
+    # # Extract reference dimensions from the CDS510 sqlite database (converted from
     # # an MS Access .mdb).
-    # csv510_sqlite2parquet()
+    csv510_sqlite2pickle()
     # # The CDS510 will not have complete crash/vehicle/participant data, because
     # # it takes far too long to extract in this format, so we now look for
     # # CDS501 CSVs. These will have complete crash/vehicle/participant data--but
-    # # will not have any of the reference tables.
-    # cds501_csvs2parquet()
-    print(get_cds510_class_definitions())
+    # # will not have any of the reference dimensions.
+    # cds501_csvs2pickle()
+    # print(get_cds510_class_definitions())
