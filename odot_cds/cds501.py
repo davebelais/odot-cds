@@ -1,16 +1,12 @@
 import csv
 import sys
 from dataclasses import dataclass, fields
-from datetime import date
 from decimal import Decimal
 from http.client import HTTPResponse
-from io import StringIO
 from traceback import format_exception
 from typing import Optional, Iterable, Tuple, Set, List, Union
 
 import pandas
-
-from odot_cds import client
 
 
 @dataclass(unsafe_hash=True, frozen=True)
