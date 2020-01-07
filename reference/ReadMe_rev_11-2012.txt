@@ -90,7 +90,7 @@ The �Vehicle Id� value on the Participant records can be used to link each v
    
 All fields are in text-compatible format.  No fields are �packed� or �over punched�.  All fields include leading zeros when applicable. Numeric fields that can potentially contain a minus sign have either a zero or a minus in the first character. The decimal point character is included in the output field when it is applicable for the given data item. Examples: a milepoint value of 23.45 is shown as �0023.45�. A milepoint value of �46.00 is shown as �-046.00�. 
 
-When a field is null in the master SQL database, it is null (represented only by a comma) in the CDS501 raw data extract. 
+When a field is null in the master SQL database, it is null (represented only by a comma) in the CDS501 raw data extract.
    
 ------------------------------------------------------------------------------------------ 
      B.   Recommendations for importing Raw Data Extract files.

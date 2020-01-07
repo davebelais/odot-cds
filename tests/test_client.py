@@ -5,16 +5,22 @@ import enum
 import random
 import sys
 import warnings
+from copy import copy
 from datetime import date, timedelta
 from functools import update_wrapper
 from http.client import HTTPResponse
 from time import sleep
 from traceback import format_exception
-from typing import Optional, Callable, Any, Sequence, Tuple, Iterable
+from typing import Optional, Callable, Any, Sequence, Tuple, List, Iterable
 
 import pandas
 
 from odot_cds import client, cds501
+
+# The following constants determine how long to wait between HTTP requests
+# (a wait is necessary in order to avoid server errors)
+MINIMUM_REQUEST_BUFFER: float = 1.0
+MAXIMUM_REQUEST_BUFFER: float = 3.0
 
 
 class Echo(enum.Enum):
@@ -28,6 +34,8 @@ class Echo(enum.Enum):
     NONE: int = 0
 
 
+# The following constant determines how much information to print, by default,
+# when performing tests
 ECHO: Echo = Echo.MINIMAL
 
 
@@ -85,7 +93,7 @@ def retry(
                     error = None
                     break
                 except exception_types as e:
-                    if echo != Echo.NONE:
+                    if echo == Echo.ALL:
                         warnings.warn(get_exception_text())
                     number_of_failed_attempts += 1
                     error = e
@@ -161,7 +169,11 @@ def represent_parameters(multiline: bool = False, **parameters) -> str:
     )
 
 
-def validate_get_data_frames(*args, **kwargs) -> None:
+def validate_cds501_get_data_frames(*args, **kwargs) -> None:
+    """
+    Verify that data frames are returned without error when this data set is
+    passed to `odot_cds.cds501.get_data_frames`
+    """
     crashes_data_frame, vehicles_data_frame, participants_data_frame = (
         cds501.get_data_frames(
             *args,
@@ -173,31 +185,33 @@ def validate_get_data_frames(*args, **kwargs) -> None:
     assert isinstance(participants_data_frame, pandas.DataFrame)
 
 
-def validate_cds501(response: HTTPResponse) -> None:
+def validate_cds501_read(response: HTTPResponse) -> None:
     """
     Validate a CDS501 extract
     """
-    # Collect the CDS501 iterable into a `tuple`
-    cds501_rows: Tuple[cds501.CDS501] = tuple(cds501.read(response))
-    # Check to ensure the CDS501 tuple is not empty
-    if cds501_rows:
-        assert isinstance(cds501_rows[0], cds501.CDS501)
-        # Validate data frames obtained directly from an extract
-        validate_get_data_frames(
-            cds501_rows
-        )
-        # Validate data frames obtained from a split
-        crashes, vehicles, participants = cds501.split(cds501_rows)
-        assert isinstance(crashes[0], cds501.Crash)
-        assert isinstance(vehicles[0], cds501.Vhcl)
-        assert isinstance(participants[0], cds501.Partic)
-        validate_get_data_frames(
-            (crashes, vehicles, participants)
-        )
-    else:
-        warnings.warn(
-            'No records found:\n' + str(response.info())
-        )
+    # Only validate if there is at least one row in the response
+    if int(response.headers['Content-Length']):
+        # Collect the CDS501 iterable into a `tuple`
+        cds501_rows: Tuple[cds501.CDS501] = tuple(cds501.read(response))
+        # Check to ensure the CDS501 tuple is not empty
+        if cds501_rows:
+            assert isinstance(cds501_rows[0], cds501.CDS501)
+            # Validate data frames obtained directly from an extract
+            validate_cds501_get_data_frames(
+                cds501_rows
+            )
+            # Validate data frames obtained from a split
+            crashes, vehicles, participants = cds501.split(cds501_rows)
+            assert isinstance(crashes[0], cds501.Crash)
+            assert isinstance(vehicles[0], cds501.Vhcl)
+            assert isinstance(participants[0], cds501.Partic)
+            validate_cds501_get_data_frames(
+                (crashes, vehicles, participants)
+            )
+        else:
+            raise ValueError(
+                'No records found:\n' + str(response.info())
+            )
 
 
 @retry(
@@ -226,7 +240,7 @@ def extract_and_validate(
             echo=True if ECHO.value >= Echo.ALL.value else False
         ).extract(**parameters)
         if parameters['extract'] == client.Extract.CDS501:
-            validate_cds501(response)
+            validate_cds501_read(response)
         elif parameters['extract'] == client.Extract.CDS510:
             verify_magic_bytes(response, 'mdb')
         else:
@@ -234,23 +248,20 @@ def extract_and_validate(
     except client.DisabledFormElementError:
         # This indicates the report is not available for the parameters
         # selected--this is a valid response, so we don't raise an error
-        if echo != Echo.ALL:
+        if echo == Echo.ALL:
             warnings.warn(get_exception_text())
     except client.InvalidRoadTypeExtractError:
         # This indicates the extract/report is not available for the
         # indicated road type
         if echo == Echo.ALL:
             warnings.warn(get_exception_text())
-    # Sleep for a random period of time between 1 and 3 seconds, in order to
-    # avoid overburdening the server with requests
-    precision: int = 100
-    sleep(random.randrange(1 * precision, 3 * precision)/precision)
 
 
-class ExtractsTest:
+class ExtractParameterSets:
     """
-    This class holds form data while field values are manipulated and options
-    retrieved in order to construct parameter sets to test
+    This class as an iterable object wherein each item is a set of parameters
+    for passing to `extract_and_validate` (which will in turn pass the same
+    parameters to `client.Client().extract`)
     """
 
     def __init__(self):
@@ -260,7 +271,10 @@ class ExtractsTest:
             echo=True if ECHO == Echo.ALL else False
         )
 
-    def __call__(self):
+    def __iter__(self) -> Iterable[dict]:
+        """
+        Yield dictionaries representing each set of parameters to test
+        """
         # Determine the date range
         end_date: date = client.get_last_year_end()
         begin_date: date = end_date - timedelta(days=7)
@@ -268,30 +282,48 @@ class ExtractsTest:
             begin_date=begin_date,
             end_date=end_date
         )
+        parameter_sets: List[dict] = []
         for road_type in client.RoadType:
             parameters['road_type'] = road_type
             if road_type == client.RoadType.ALL:
-                self.extract_all_roads(**parameters)
+                parameter_sets += self.get_all_roads_parameters(**parameters)
             elif road_type == client.RoadType.HIGHWAY:
-                self.extract_highways(**parameters)
+                parameter_sets += self.get_highways_parameters(**parameters)
             else:
-                self.extract_local_roads(**parameters)
+                parameter_sets += self.get_local_roads_parameters(**parameters)
+        for parameter_set in parameter_sets:
+            yield parameter_set
 
-    def extract(self, **parameters) -> None:
+    def get_extract_parameters(self, **parameters) -> List[dict]:
         """
         Perform each applicable extract/report for a set of parameters
         """
+        parameter_sets: List[dict] = []
         for extract in client.Extract:
             parameters.update(extract=extract)
-            extract_and_validate(**parameters)
+            parameter_sets.append(copy(parameters))
+        return parameter_sets
 
-    def extract_all_roads_county(
+    def get_all_roads_county_parameters(
         self,
         **parameters
-    ) -> None:
+    ) -> List[dict]:
+        """
+        Populate parameter sets with a randomly selected county
+        """
         counties: Tuple[str] = tuple(
-            self.connection.form_fields.all_roads_county.options.values()
+            value
+            for key, value in (
+                self.connection.form_fields.all_roads_county.options.items()
+            )
+            if (
+                'Multnomah' in key or
+                'Washington' in key or
+                'Clackamas' in key or
+                'Lane' in key
+            )
         )
+        assert len(counties) == 4
         # Choose a county at random
         parameters.update(
             county=random.choice(counties)
@@ -300,12 +332,15 @@ class ExtractsTest:
             'all_roads_county',
             parameters['county']
         )
-        self.extract_all_roads_query_types(**parameters)
+        return self.get_all_roads_query_types_parameters(**parameters)
 
-    def extract_all_roads_city(
+    def get_all_roads_city_parameters(
         self,
         **parameters
-    ) -> None:
+    ) -> List[dict]:
+        """
+        Populate parameter sets with a randomly selected city
+        """
         cities: Tuple[str] = tuple(
             self.connection.form_fields.all_roads_city.options.values()
         )
@@ -314,30 +349,38 @@ class ExtractsTest:
             parameters.update(
                 city=random.choice(cities)
             )
-            self.extract_all_roads_query_types(**parameters)
+            return self.get_all_roads_query_types_parameters(**parameters)
         else:
             raise RuntimeError(
                 'No cities found for the following set of parameters: ' +
                 represent_parameters(multiline=True, **parameters)
             )
 
-    def extract_all_roads_query_types(
+    def get_all_roads_query_types_parameters(
         self,
         **parameters
-    ) -> None:
-        for query_type in (
+    ) -> List[dict]:
+        """
+        Populate a query type at random
+        """
+        parameter_sets: List[dict] = []
+        query_type: str = random.choice([
             'rdoSumQueryTypeALL',  # All Roads
             'rdoSumQueryTypeCNTY',  # County Roads
             'rdoSumQueryTypeCITY',  # "City Streets",
             'rdoSumQueryTypeSTATE',  # State Highways
-        ):
-            parameters.update(query_type=query_type)
-            self.extract(**parameters)
+        ])
+        parameters.update(query_type=query_type)
+        parameter_sets += self.get_extract_parameters(**parameters)
+        return parameter_sets
 
-    def extract_local_roads_streets(
+    def get_local_roads_streets_parameters(
         self,
         **parameters
-    ) -> None:
+    ) -> List[dict]:
+        """
+        Populate parameter sets with a randomly selected `street`
+        """
         # If a query type is specified, set it so that the correct street
         # options are populated
         if 'query_type' in parameters:
@@ -390,12 +433,15 @@ class ExtractsTest:
                     parameters.update(
                         cross_street=random.choice(cross_streets)
                     )
-        self.extract(**parameters)
+        return self.get_extract_parameters(**parameters)
 
-    def extract_local_roads_query_types(
+    def get_local_roads_query_types_parameters(
         self,
         **parameters
-    ) -> None:
+    ) -> List[dict]:
+        """
+        Populate a query type at random
+        """
         if parameters['city'] == '000':
             query_types = (
                 'rdoLclQueryTypeMP',  # Mile-Pointed County Road
@@ -409,84 +455,116 @@ class ExtractsTest:
                 # Intersectional
                 'rdoLclQueryTypeIN'
             )
-        for query_type in query_types:
-            parameters.update(query_type=query_type)
-            self.extract_local_roads_streets(**parameters)
-
-    def extract_local_roads_county(
-        self,
-        **parameters
-    ) -> None:
-        # Choose a county at random
-        parameters.update(
-            county=random.choice(
-                tuple(self.connection.counties.values())
-            )
+        parameter_sets: List[dict] = []
+        query_type: str = random.choice(query_types)
+        parameters.update(query_type=query_type)
+        parameter_sets += self.get_local_roads_streets_parameters(
+            **parameters
         )
-        self.extract_all_roads_query_types(**parameters)
+        return parameter_sets
 
-    def extract_all_roads(
+    def get_all_roads_parameters(
         self,
         **parameters
-    ) -> None:
+    ) -> List[dict]:
+        """
+        Populate parameter sets with one randomly selected county, and one
+        randomly selected city
+        """
         parameters.update(jurisdiction='rdoSumJurisdictionCNTY')
         self.connection.update_form_field(
             'all_roads_jurisdiction',
             'rdoSumJurisdictionCNTY'
         )
-        self.extract_all_roads_county(**parameters)
+        parameter_sets: List[dict] = self.get_all_roads_county_parameters(
+            **parameters
+        )
         parameters.update(jurisdiction='rdoSumJurisdictionCITY')
         self.connection.update_form_field(
             'all_roads_jurisdiction',
             'rdoSumJurisdictionCITY'
         )
-        self.extract_all_roads_city(**parameters)
+        parameter_sets += self.get_all_roads_city_parameters(**parameters)
+        return parameter_sets
 
-    def extract_highways_mileage(
+    def get_highways_mileage_parameters(
         self,
         **parameters
-    ) -> None:
-        for non_add_mileage, add_mileage in (
-            (True, True),
+    ) -> List[dict]:
+        """
+        Add parameter sets for each possible combination of `add_mileage` and
+        `non_add_mileage` values
+        """
+        parameter_sets: List[dict] = []
+        # Always include a fully inclusive request
+        add_mileage_options: List[Tuple[bool, bool]] = list([
+            (True, True)
+        ])
+        # Randomly select either add-mileage or non-add-mileage as a second
+        # option
+        add_mileage_options.append(random.choice([
             (True, False),
             (False, True)
-        ):
+        ]))
+        for non_add_mileage, add_mileage in add_mileage_options:
             parameters['non_add_mileage'] = non_add_mileage
             parameters['add_mileage'] = add_mileage
-            self.extract_highways_z_mile_points(**parameters)
+            parameter_sets += self.get_highways_z_mile_points_parameters(
+                **parameters
+            )
+        return parameter_sets
 
-    def extract_highways_z_mile_points(
+    def get_highways_z_mile_points_parameters(
         self,
         **parameters
-    ) -> None:
+    ) -> List[dict]:
+        parameter_sets: List[dict] = []
         for z_mile_points in (
             True,
             False
         ):
             parameters['z_mile_points'] = z_mile_points
-            self.extract(**parameters)
+            parameter_sets += self.get_extract_parameters(**parameters)
+        return parameter_sets
 
-    def extract_highways(
+    def get_highways_parameters(
         self,
         **parameters
-    ) -> None:
-        # Choose a highways segment and type at random
+    ) -> List[dict]:
+        """
+        Populate a `highway` and `highway_type` parameter at random
+        """
         parameters['highway'] = random.choice(
             tuple(self.connection.highways.keys())
         )
         parameters['highway_type'] = random.choice(
             tuple(client.HighwayType)
         )
-        self.extract_highways_mileage(**parameters)
+        return self.get_highways_mileage_parameters(**parameters)
 
-    def extract_local_roads(
+    def get_local_roads_parameters(
         self,
         **parameters
-    ) -> None:
+    ) -> List[dict]:
+        """
+        Populate a `county` and `city` parameter, randomly selecting from the
+        4 most populous counties
+        """
         counties: Tuple[str] = tuple(
-            self.connection.form_fields.local_roads_county.options.values()
+            value
+            for key, value in (
+                self.connection.form_fields.local_roads_county.options.items()
+            )
+            if (
+                'Multnomah' in key or
+                'Washington' in key or
+                'Clackamas' in key or
+                'Lane' in key
+            )
         )
+        assert len(counties) == 4
         cities: Tuple[str] = tuple()
+        parameter_sets: List[dict] = []
         # Some counties may not have any cities with local roads--so we repeat
         # until `cities` is a non-empty tuple (usually this will only require
         # one iteration, however)
@@ -513,7 +591,22 @@ class ExtractsTest:
                     'local_roads_city',
                     parameters['city']
                 )
-                self.extract_local_roads_query_types(**parameters)
+                parameter_sets += self.get_local_roads_query_types_parameters(
+                    **parameters
+                )
+        return parameter_sets
+
+
+def buffer_request() -> None:
+    """
+    Sleep for a random period of time between 1 and 3 seconds, in order to
+    avoid overburdening the server with requests
+    """
+    precision: int = 100
+    sleep(random.randrange(
+        MINIMUM_REQUEST_BUFFER * precision,
+        MAXIMUM_REQUEST_BUFFER * precision) / precision
+    )
 
 
 def test_extracts():
@@ -522,20 +615,14 @@ def test_extracts():
     `odot_cds.client.Client().extract()`, and validates the results returned
     for each.
     """
-    extracts_test: ExtractsTest = ExtractsTest()
-    extracts_test()
-
-
-def test_disabled_form_element_error():
-    connection: client.Client = client.connect(
-        echo=True if ECHO == Echo.ALL else False
-    )
+    for parameters in ExtractParameterSets():
+        extract_and_validate(**parameters)
+        buffer_request()
 
 
 if __name__ == '__main__':
     # from odot_cds.client import *
     # import datetime
     # extract_and_validate(
-    #     begin_date=datetime.date(2018, 12, 24), end_date=datetime.date(2018, 12, 31), road_type=RoadType.HIGHWAY, highway='171,-0.01,49.97', highway_type=HighwayType.FRONTAGE_ROAD, non_add_mileage=True, add_mileage=True, z_mile_points=True, extract=Extract.CDS501
     # )
     test_extracts()
