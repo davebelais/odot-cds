@@ -109,13 +109,17 @@ Parameters for `odot_cds.client.Client().extract()`:
   Only applicable if `road_type == RoadType.LOCAL`.
 
   The name or ID of a street. For a complete dictionary of street IDs
-  and names for a county and city, call `odot_cds.client.Client(
-  ).get_streets()`. For example, to get streets for Portland:
-
-  >>> odot_cds.client.Client().get_streets(
-  ...     county='Multnomah',
-  ...     city='Portland'
-  ... )
+  and names for a county and city, call 
+  `odot_cds.client.Client().get_streets()`. For example, to get streets for 
+  Portland:
+   
+  ```python
+  import odot_cds
+  odot_cds.client.Client().get_streets(
+      county='Multnomah',
+      city='Portland'
+  )
+  ```
 
 - cross_street (str):
   See `street`.
