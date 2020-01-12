@@ -197,9 +197,9 @@ response: HTTPResponse = client.extract(
     county='Multnomah',
 )
 
-# Parse a CDS501 response as 3 data frames: "crash", "vhcl", and "partic". 
-# Each of these data frames corresponds to a fact table in the CDS510 "Decode"
-# database.
+# Parse a CDS501 response as 3 data frames. Each of these data frames 
+# corresponds to a fact table in the CDS510 "Decode" database: "crash", "vhcl",
+# and "partic".
 crash_data_frame, vhcl_data_frame, partic_data_frame = cds501.get_data_frames(
     response
 )
