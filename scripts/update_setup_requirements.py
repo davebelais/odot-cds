@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-
 from setuptools_setup_versions import install_requires
 
 if __name__ == '__main__':

@@ -1,1 +1,1 @@
-from . import client, cds501, dimensions  # noqa
+from . import client, cds501  # noqa

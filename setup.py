@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='odot-cds',
-    version="2018.0.1",
+    version="2020.0.1",
     description=(
         'Oregon Department of Transportation - Crash Data System'
     ),
