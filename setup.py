@@ -17,7 +17,16 @@ setup(
     ],
     extras_require={
         "dev": [
-            "setuptools-setup-versions>=0.0.27"
+            "setuptools-setup-versions>=0.0.28",
+            "lxml>=4.4.2",
+            "pandas>=0.25.3",
+            "iso8601>=0.1.12"
+        ],
+        "test": [
+            "setuptools-setup-versions>=0.0.28",
+            "lxml>=4.4.2",
+            "pandas>=0.25.3",
+            "iso8601>=0.1.12"
         ]
     }
 )
