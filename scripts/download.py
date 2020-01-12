@@ -309,7 +309,3 @@ def download_safety_data(
 
 if __name__ == '__main__':
     download_safety_data(overwrite=True)
-
-
-
-

@@ -465,8 +465,6 @@ def get_cds510_class_definitions() -> str:
     return '\n'.join(lines)
 
 
-
-
 if __name__ == '__main__':
     # # Extract reference dimensions from the CDS510 sqlite database (converted from
     # # an MS Access .mdb).
@@ -477,4 +475,3 @@ if __name__ == '__main__':
     # # will not have any of the reference dimensions.
     # cds501_csvs2pickle()
     # print(get_cds510_class_definitions())
-

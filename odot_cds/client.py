@@ -26,7 +26,6 @@ from xml.etree.ElementTree import Element
 
 import lxml.html
 import lxml.etree
-import sob
 
 HOSTNAME: str = 'zigzag.odot.state.or.us'
 TODAY: date = date.today()
@@ -506,10 +505,7 @@ class _ZigZag:
         self,
         path: str = '',
         data: Optional[
-            Union[
-                str, Dict,
-                sob.model.Model
-            ]
+            Union[str, Dict]
         ] = None,
         method: str = 'GET',
         headers: Dict[str, Optional[str]] = {},
@@ -523,7 +519,7 @@ class _ZigZag:
           The (absolute or relative) path of the endpoint to which this request
           is being made
 
-        - data (str|dict|sob.model.Object|[sob.model.Object]|None):
+        - data (str|dict|None):
 
           The data to be included in the body of this request
 
