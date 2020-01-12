@@ -32,6 +32,13 @@ TODAY: date = date.today()
 
 
 def get_last_year_end(today: date = TODAY) -> date:
+    """
+    Retrieves a `date.date` instance representing the last day of last year.
+
+    Parameters:
+
+    - today (date.date): The reference date (defaults to `date.date.today()`).
+    """
     return (
         today
         if today.month == 12 and today.day == 31 else
@@ -39,7 +46,14 @@ def get_last_year_end(today: date = TODAY) -> date:
     )
 
 
-def get_year_start(today: date) -> date:
+def get_year_start(today: date = TODAY) -> date:
+    """
+    Retrieves a `date.date` instance representing the first day of this year.
+
+    Parameters:
+
+    - today (date.date): The reference date (defaults to `date.date.today()`).
+    """
     return date(today.year, 1, 1)
 
 
@@ -1589,6 +1603,8 @@ class Client:
 
     def extract(
         self,
+        begin_date: date = DEFAULT_BEGIN_DATE,
+        end_date: date = DEFAULT_END_DATE,
         road_type: RoadType = RoadType.ALL,
         extract: Extract = Extract.CDS501,
         jurisdiction: str = '',
@@ -1597,8 +1613,6 @@ class Client:
         street: str = '',
         cross_street: str = '',
         query_type: str = '',
-        begin_date: date = DEFAULT_BEGIN_DATE,
-        end_date: date = DEFAULT_END_DATE,
         highway: str = '',
         begin_mile_point: float = 0.0,
         end_mile_point: float = 0.0,
@@ -1615,65 +1629,48 @@ class Client:
 
         Parameters:
 
-        - road_type (RoadType):
+        - begin_date (datetime.date):
+          The first day for which to retrieve records.
 
+        - end_date (datetime.date):
+          The last day for which to retrieve records.
+
+        - road_type (RoadType):
           This indicates the type of roads to retrieve crash data for.
 
           - RoadType.ALL: Both highways and local roads (default)
-
           - RoadType.HIGHWAY: State highways
-
           - RoadType.LOCAL: Local roads
 
         - extract (Extract):
-
           This indicates which extract/report to retrieve.
 
-          - Extract.CDS501: CSV
-
-          - Extract.CDS510: MDB
-
-          - Extract.CDS150
-
-          - Extract.CDS160
-
-          - Extract.CDS190b
-
-          - Extract.CDS200
-
-          - Extract.CDS250
-
-          - Extract.CDS280
-
-          - Extract.CDS380
-
-          - Extract.CDS390
-
-          - Extract.CDS501
-
-          - Extract.CDS510
-
-          - Extract.DIRECTION
-
-          - Extract.RRR
+          - Extract.CDS150: "Summary by Year" (XLS)
+          - Extract.CDS160: "Summary by Injury Severity" (XLS)
+          - Extract.CDS190b: "Time/day of week" (XLS)
+          - Extract.CDS200: "County Summary" (XLS)
+          - Extract.CDS250: "City Summary" (XLS)
+          - Extract.CDS280: "Summary by Month" (XLS)
+          - Extract.CDS380: "Comprehensive PRC-11x17" (XLS)
+          - Extract.CDS390: "Crash Location" (XLS)
+          - Extract.CDS501: "Data Extract" (CSV)
+          - Extract.CDS510: "Decode DB" (MDB)
+          - Extract.DIRECTION: "Vehicle Direction" (XLS)
+          - Extract.RRR: "Characteristics" (XLS)
 
         - jurisdiction (str):
-
           This applies only if `road_type == RoadType.ALL`.
 
           - "rdoSumJurisdictionCNTY" ("County"):
             Return all crashes for a specified county.
-
           - "rdoSumJurisdictionCITY" ("City"):
             Return all crashes for a specified city.
 
         - county (str):
-
           The name or ID of a county. For a complete dictionary of county IDs
           and names, get `odot_cds.client.Client().counties`.
 
         - city (str):
-
           The name or ID of a city. For a complete dictionary of city IDs
           and names, get `odot_cds.client.Client().cities`.
 
@@ -1691,11 +1688,9 @@ class Client:
           ... )
 
         - cross_street (str):
-
-            See `street`
+          See `street`.
 
         - query_type (str):
-
           The type of roads for which to retrieve crash data.
 
           If `road_type == RoadType.ALL`, options for this will include:
@@ -1715,30 +1710,25 @@ class Client:
             option if `city` is "000" (Outside City Limits)
 
         - highway (str):
-
           The number + name of a highway. For a dictionary of valid values,
           get `odot_cds.client.Client().highways`.
 
         - z_mile_points (bool)
 
         - add_mileage (bool):
-
           Include traffic traveling in a direction wherein progress corresponds
           to a numeric increase for mileage markers.
 
         - non_add_mileage (bool):
-
           Include traffic traveling in a direction wherein progress corresponds
           to a numeric decrease for mileage markers.
 
         - record_number (int):
-
           The report will start at this record #, and will include the first
           5000 records following this record. This parameter is only applicable
           if `road_type == RoadType.LOCAL` or `road_type == RoadType.HIGHWAY`.
 
         - display_instructions (bool):
-
           Causes instructions to be included in the report. This parameter is
           only applicable if `road_type == RoadType.LOCAL` or
           `road_type == RoadType.HIGHWAY`.
