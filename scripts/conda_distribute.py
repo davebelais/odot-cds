@@ -51,4 +51,3 @@ if __name__ == '__main__':
                 os.path.abspath(REPOSITORY_DIRECTORY + '/scripts/clean.py')
             }
         )
-

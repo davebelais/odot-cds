@@ -165,6 +165,39 @@ class CDS501:
     drug_use_rpt_ind: Optional[str]
     strikg_partic_flg: Optional[bool]
 
+    @property
+    def crash(self) -> "Crash":
+        """
+        As a `Crash` instance
+        """
+        values: List[Union[str, int, Decimal, float, bool]] = []
+        for index in range(len(CDS501_FIELDS)):
+            if CDS501_FIELDS.name in CRASH_FIELD_NAMES:
+                values.append(self[index])
+        return Crash(*values)
+
+    @property
+    def vhcl(self) -> "Vhcl":
+        """
+        As a `Vhcl` instance
+        """
+        values: List[Union[str, int, Decimal, float, bool]] = []
+        for index in range(len(CDS501_FIELDS)):
+            if CDS501_FIELDS.name in VHCL_FIELD_NAMES:
+                values.append(self[index])
+        return Vhcl(*values)
+
+    @property
+    def partic(self) -> "Partic":
+        """
+        As a `Partic` instance
+        """
+        values: List[Union[str, int, Decimal, float, bool]] = []
+        for index in range(len(CDS501_FIELDS)):
+            if CDS501_FIELDS.name in PARTIC_FIELD_NAMES:
+                values.append(self[index])
+        return Partic(*values)
+
 
 CDS501_FIELDS: Tuple[object] = fields(CDS501)
 
@@ -407,26 +440,11 @@ def split(
     partic_rows: List[Partic] = []
     for row in rows:
         if row.rec_typ_cd == '1':
-            # Populate `Crash` values
-            values: List[Union[str, int, Decimal, float, bool]] = []
-            for index in range(len(CDS501_FIELDS)):
-                if CDS501_FIELDS.name in CRASH_FIELD_NAMES:
-                    values.append(row[index])
-            crash_rows.append(Crash(*values))
+            crash_rows.append(row.crash)
         elif row.rec_typ_cd == '2':
-            # Populate `Vhcl` values
-            values: List[Union[str, int, Decimal, float, bool]] = []
-            for index in range(len(CDS501_FIELDS)):
-                if CDS501_FIELDS.name in CRASH_FIELD_NAMES:
-                    values.append(row[index])
-            vhcl_rows.append(Vhcl(*values))
+            vhcl_rows.append(row.vhcl)
         elif row.rec_typ_cd == '3':
-            # Populate `Partic` values
-            values: List[Union[str, int, Decimal, float, bool]] = []
-            for index in range(len(CDS501_FIELDS)):
-                if CDS501_FIELDS.name in CRASH_FIELD_NAMES:
-                    values.append(row[index])
-            partic_rows.append(Partic(*values))
+            partic_rows.append(row.partic)
     return crash_rows, vhcl_rows, partic_rows
 
 
@@ -464,6 +482,3 @@ def get_data_frames(
         pandas.DataFrame(vhcl_rows),
         pandas.DataFrame(partic_rows)
     )
-
-
-

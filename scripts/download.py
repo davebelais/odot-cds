@@ -238,6 +238,43 @@ class FTP(ftplib.FTP):
             )
 
 
+_MAX_FTP_CONNECT_ATTEMPTS: int = 10
+
+
+def _get_ftp_connection(
+    host: str = ODOT_FTP_HOST,
+    proxy: str = '',
+) -> FTP:
+    """
+    Get an FTP connection
+    """
+    ftp: Optional[FTP] = None
+    for i in range(_MAX_FTP_CONNECT_ATTEMPTS):
+        try:
+            ftp = FTP(
+                host=host,
+                proxy=proxy
+            )
+            break
+        except (TimeoutError, EOFError):
+            warn(''.join(format_exception(*sys.exc_info())))
+    ftp.login()
+    return ftp
+
+
+def _get_ftp_walker(
+    ftp: FTP,
+    source_directory: str
+) -> Iterable[Tuple]:
+    walker: Optional[Iterable[Tuple]] = None
+    while walker is None:
+        try:
+            walker = ftp.walk(source_directory)
+        except TimeoutError:
+            warn(''.join(format_exception(*sys.exc_info())))
+    return walker
+
+
 def download_safety_data(
     host: str = ODOT_FTP_HOST,
     source_directory: str = TRANSPORTATION_SAFETY_GIS_DIRECTORY,
@@ -249,23 +286,8 @@ def download_safety_data(
     This function will download safety dimensions files from the FTP *if they do
     not already exist in the target directory*.
     """
-    # Connect to the FTP
-    ftp: Optional[FTP] = None
-    while ftp is None:
-        try:
-            ftp = FTP(
-                host=host,
-                proxy=proxy
-            )
-        except (TimeoutError, EOFError):
-            warn(''.join(format_exception(*sys.exc_info())))
-    ftp.login()
-    walker: Optional[Iterable[Tuple]] = None
-    while walker is None:
-        try:
-            walker = ftp.walk(source_directory)
-        except TimeoutError:
-            warn(''.join(format_exception(*sys.exc_info())))
+    ftp: FTP = _get_ftp_connection(host, proxy)
+    walker: Iterable[Tuple] = _get_ftp_walker(ftp, source_directory)
     for root, directories, files in walker:
         for source_file_path in files:
             target_file_path = target_directory + source_file_path
@@ -287,6 +309,7 @@ def download_safety_data(
 
 if __name__ == '__main__':
     download_safety_data(overwrite=True)
+
 
 
 

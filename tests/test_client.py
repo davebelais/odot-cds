@@ -621,8 +621,4 @@ def test_extracts():
 
 
 if __name__ == '__main__':
-    # from odot_cds.client import *
-    # import datetime
-    # extract_and_validate(
-    # )
     test_extracts()

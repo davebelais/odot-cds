@@ -72,10 +72,7 @@ def get_data_frame(
     path: str = DIRECTORY + '/{}.pickle'.format(
         table.value.lower()
     )
-    try:
-        return pandas.read_pickle(path)
-    except:
-        pass
+    return pandas.read_pickle(path)
 
 
 def _verify_mdbtools_installed():

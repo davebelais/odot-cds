@@ -14,7 +14,7 @@ from http.client import HTTPResponse
 from http.cookiejar import CookieJar, Cookie
 from io import StringIO
 from typing import (
-    Dict, Optional, Union, Callable, List
+    Dict, Optional, Union, Callable, List, Tuple
 )
 from urllib.parse import urlencode
 from urllib.request import (
@@ -736,14 +736,12 @@ class FormFields:
     highways_begin_mile_point: FormField = FormField(
         tag='input',
         type='text',
-        name='ctl00$MainBodyContent$MainTabs$TabHighways$txtHwyBegMilePoint',
-        #value='-999.99'
+        name='ctl00$MainBodyContent$MainTabs$TabHighways$txtHwyBegMilePoint'
     )
     highways_end_mile_point: FormField = FormField(
         tag='input',
         type='text',
-        name='ctl00$MainBodyContent$MainTabs$TabHighways$txtHwyEndMilePoint',
-        #value='999.99'
+        name='ctl00$MainBodyContent$MainTabs$TabHighways$txtHwyEndMilePoint'
     )
     highways_all_highways: FormField = FormField(
         tag='input',
