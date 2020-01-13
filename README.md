@@ -7,9 +7,10 @@ https://zigzag.odot.state.or.us).
 Modules:
 
 - [odot_cds.client](#odot-cds-client)
+  - [Retrieving an extract or report from CDS](#odot-cds-client)
 - [odot_cds.cds501](#odot-cds-cds501)
 
-## <a name="odot-cds-client">odot_cds.client</a>
+## odot_cds.client
 
 ### Connecting to CDS
 
